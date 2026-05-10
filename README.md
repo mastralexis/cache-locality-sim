@@ -37,7 +37,7 @@ To compile, run, and profile this project, you will need:
 ## Building and Running
 1. Clone this repository:
 ```bash
-git clone <repo>
+git clone https://github.com/mastralexis/cache-locality-sim.git
 cd cache-locality-sim
 ```
 2. Compile the project using CMake:
@@ -52,7 +52,7 @@ cmake --build build
 ```
 
 ## Controls
-To be Implemented
+To be implemented
 
 ### Team Members
 
@@ -63,4 +63,4 @@ To be Implemented
 | Ξηρομερίτης Δημήτριος | <it2023052@hua.gr>       |
 
 ## License
-MIT License. See `LICENSE` for more information.
+MIT License. See [LICENSE](LICENSE) for more information.
