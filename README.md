@@ -1,7 +1,7 @@
 # Cache Locality Simulation: Data-Oriented Design vs. OOP in C
 
 ## Overview
-This repository contains the code, data, and academic paper for my semester assignment. The project investigates the performance differences between **Data-Oriented Design (DOD)** and traditional **Object-Oriented Programming (OOP)** paradigms within a high-performance C environment.
+This repository contains the code, data, and academic paper for my semester assignment. The project investigates the performance differences between **Data-Oriented Design** and traditional **Object-Oriented Programming** paradigms within a high-performance C environment.
 
 By simulating a large-scale Particle System using [Raylib](https://www.raylib.com/) library, this project visualizes and measures the impact of memory layout on CPU cache efficiency.
 
@@ -10,8 +10,8 @@ Specifically, it compares:
 *   **SoA (Structure of Arrays):** The DOD approach, optimized for data locality, hardware prefetching, and minimal L1/L2 cache misses.
 
 ## Features
-*   **Live Rendering:** Visualizes up to 100,000+ "objects" in real-time using Raylib.
-*   **Real-time Paradigm Swapping:** Press `SPACE` to instantly switch the physics engine between the AoS and SoA implementations.
+*   **Live Rendering:** Visualizing large systems of particles/objects in real-time using Raylib.
+*   **Real-time Paradigm Swapping:** Instantly switch the physics engine between the AoS and SoA implementations.
 *   **Live Profiling:** On-screen telemetry displaying Frames Per Second and execution time  for the physics update loop.
 
 ## Repository Structure
