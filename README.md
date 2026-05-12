@@ -37,20 +37,36 @@ To compile, run, and profile this project, you will need:
 *(Raylib does **not** need to be pre-installed. The CMake build system will automatically fetch and compile the correct version of Raylib for your operating system).*
 ## Building and Running
 1. Clone this repository:
-```bash
-git clone https://github.com/mastralexis/cache-locality-sim.git
-cd cache-locality-sim
-```
-2. Compile the project using CMake:
-```bash
-cmake -B build
-cmake --build build
-```
+    ```bash
+    git clone https://github.com/mastralexis/cache-locality-sim.git
+    ```
+2. Move inside the project:
+    ```bash
+    cd cache-locality-sim
+    ```
+2. Compile and run the project:
+    - Linux
+    ```bash
+    cmake -B build                      # Configure and Download dependencies
+    ```
+    ```bash
+    cmake --build build                 # Compile
+    ```
+    ```bash
+    ./build/cache-locality-sim          # Run
+    ```
 
-3. Run the executable:
-```bash
-./build/cache-locality-sim
-```
+    - Windows
+    ```powershell
+    cmake -B build -G "MinGW Makefiles" # Configure and download dependencies (with MinGW)
+    ```
+    ```powershell
+    cmake --build build                 # Compile
+    ```
+    ```powershell
+    .\build\cache-locality-sim.exe      # Run
+    ```
+
 
 ## Controls
 To be implemented
