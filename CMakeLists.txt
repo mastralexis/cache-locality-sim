@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-project(cache-locality-sim VERSION 1.0 DESCRIPTION "Cache Locality Sim" LANGUAGES C)
+project(cache-locality-sim VERSION 1.0 DESCRIPTION "Cache Locality Simulation" LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
