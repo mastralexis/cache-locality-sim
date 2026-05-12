@@ -44,8 +44,8 @@ To compile, run, and profile this project, you will need:
     ```bash
     cd cache-locality-sim
     ```
-2. Compile and run the project:
-    - Linux
+3. Compile and run the project:
+    - Linux / macOS / FreeBSD
     ```bash
     cmake -B build                      # Configure and Download dependencies
     ```
