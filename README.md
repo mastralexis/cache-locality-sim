@@ -31,9 +31,10 @@ Specifically, it compares:
 ## Prerequisites
 To compile, run, and profile this project, you will need:
 *   A C compiler (GCC or Clang)
-*   CMake
-*   [Raylib](https://github.com/raysan5/raylib) installed on your system.
+*   CMake (3.15 or highter)
 *   [Valgrind](https://valgrind.org/) (specifically for running the cachegrind benchmarks).
+
+*(Raylib does **not** need to be pre-installed. The CMake build system will automatically fetch and compile the correct version of Raylib for your operating system).*
 ## Building and Running
 1. Clone this repository:
 ```bash
