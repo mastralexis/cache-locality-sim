@@ -10,10 +10,9 @@ int main(void)
 
     SetTargetFPS(fpsCap);
 
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose()) 
+    {
         // update
-
-
         // draw
         BeginDrawing();
             ClearBackground(RAYWHITE);
