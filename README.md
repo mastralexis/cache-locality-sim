@@ -11,7 +11,6 @@ Specifically, it compares:
 
 ## Features
 *   **Live Rendering:** Visualizing large systems of particles/objects in real-time using Raylib.
-*   **Real-time Paradigm Swapping:** Instantly switch the physics engine between the AoS and SoA implementations.
 *   **Live Profiling:** On-screen telemetry displaying Frames Per Second and execution time  for the physics update loop.
 
 ## Repository Structure
