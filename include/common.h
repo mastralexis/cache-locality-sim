@@ -9,6 +9,8 @@
 #define PARTICLES_HIGH 1000000
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
+#define UNCAPPED 0
+#define PROJECTNAME "Cache Locality Simulation"
 
 typedef enum {
     MODE_MENU = 0,

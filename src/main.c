@@ -1,26 +1,45 @@
 #include "raylib.h"
+#include "common.h"
+#include "menu.h"
+#include "simulation.h"
+#include "ui.h"
+#include <stdio.h>
 
 int main(void)
 {
-    const int screenWidth = 800;
-    const int screenHeight = 450;
-    const int fpsCap = 60;
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, PROJECTNAME);
 
-    InitWindow(screenWidth, screenHeight, "test");
+    SetTargetFPS(UNCAPPED);
 
-    SetTargetFPS(fpsCap);
+    SimulationState simState = {0};
+    MenuState menuState = {0};
+    InitMenuState(&menuState);
+    SimulationMode currentMode = MODE_MENU;
 
     while (!WindowShouldClose()) 
     {
-        // update
-        // draw
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-            DrawText("Test Window", 190, 200, 20, LIGHTGRAY);
-        EndDrawing();
+        float delta = GetFrameTime();
+
+        if (currentMode == MODE_MENU)
+        {
+            BeginDrawing();
+                UpdateAndDrawMenu(&menuState);
+            EndDrawing();
+            
+            if (menuState.isStartPressed)
+            {
+		// change currentMode to the selectedMode 
+		// InitSimulation
+            }
+        }
+        else
+        {
+            // Do simulation update loop
+        }
+
     }
 
-    // de-initialization
+    // cleanup
     CloseWindow();
 
     return 0;

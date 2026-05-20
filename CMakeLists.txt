@@ -6,12 +6,25 @@ if(POLICY CMP0135)
 endif()
 
 project(cache-locality-sim VERSION 1.0 DESCRIPTION "Cache Locality Simulation" LANGUAGES C)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(${PROJECT_NAME} src/main.c)
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/include/raygui.h")
+    message(STATUS "Downloading raygui.h v4.0...")
+    file(DOWNLOAD 
+        "https://raw.githubusercontent.com/raysan5/raygui/4.0/src/raygui.h"
+        "${CMAKE_SOURCE_DIR}/include/raygui.h"
+    )
+endif()
+
+
+file(GLOB SOURCES "src/*.c")
+add_executable(${PROJECT_NAME} ${SOURCES})
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 find_package(raylib QUIET)

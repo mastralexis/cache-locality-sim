@@ -10,12 +10,15 @@ typedef struct {
     SimulationMode selectedMode;
     uint32_t selectedParticleCount;
     bool isStartPressed;
+    int guiModeToggle;  
+    int guiCountToggle;
 } MenuState;
 
 /**
- * @brief Initializes every asset needed for the manu
+ * @brief Initializes default values for the menu
+ * @param state Pointer to the menu state
  */
-void InitMenu(void);
+void InitMenuState(MenuState* state);
 
 /**
  * @brief Handles mouse/keyboard input and draws the interactive menu to the screen
