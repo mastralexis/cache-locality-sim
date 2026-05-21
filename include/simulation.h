@@ -5,7 +5,13 @@
 #include "particle_aos.h"
 #include "particle_soa.h"
 
-typedef struct {
+typedef struct SimulationState SimulationState;
+typedef void (*PhysicsUpdateFn)(SimulationState* state, float deltaTime);
+typedef void (*PhysicsDrawFn)(const SimulationState* state);
+typedef void (*PhysicsCleanFn)(SimulationState* state);
+
+struct SimulationState 
+{
     SimulationMode mode;
     uint32_t particleCount;
     // to allocate one paradim at a time
@@ -14,8 +20,12 @@ typedef struct {
         ParticleSystemSoA soa;
     } data;
 
+    PhysicsUpdateFn update;
+    PhysicsDrawFn render;
+    PhysicsCleanFn cleanup;
+
     double lastPhysicsLoopUpdate; // to compare AoS and SoA
-} SimulationState;
+};
 
 /**
  * @brief Initializes the simulation for a SPECIFIC mode

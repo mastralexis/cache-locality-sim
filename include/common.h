@@ -10,6 +10,7 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 #define UNCAPPED 0
+#define BENCHMARK_DURATION_SECONDS 10.0
 #define PROJECTNAME "Cache Locality Simulation"
 
 typedef enum {

@@ -1,42 +1,30 @@
+#include "app.h"
 #include "raylib.h"
 #include "common.h"
 #include "menu.h"
 #include "simulation.h"
 #include "ui.h"
+#include <stdint.h>
 #include <stdio.h>
 
 int main(void)
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, PROJECTNAME);
-
     SetTargetFPS(UNCAPPED);
 
-    SimulationState simState = {0};
-    MenuState menuState = {0};
-    InitMenuState(&menuState);
-    SimulationMode currentMode = MODE_MENU;
+    // init app context and set starting screen to menu
+    AppContext app = {0};
+    InitMenuState(&app.menuState);
+    SwitchToMenuScreen(&app);
+    float delta;
 
     while (!WindowShouldClose()) 
     {
-        float delta = GetFrameTime();
-
-        if (currentMode == MODE_MENU)
-        {
-            BeginDrawing();
-                UpdateAndDrawMenu(&menuState);
-            EndDrawing();
-            
-            if (menuState.isStartPressed)
-            {
-		// change currentMode to the selectedMode 
-		// InitSimulation
-            }
-        }
-        else
-        {
-            // Do simulation update loop
-        }
-
+        delta = GetFrameTime();
+        app.update(&app, delta);
+        BeginDrawing();
+            app.render(&app);
+        EndDrawing();
     }
 
     // cleanup

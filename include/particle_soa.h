@@ -12,6 +12,7 @@ typedef struct {
     float* mass;
     float* radius;
     Color* color;
+    void* memoryBlock;
 } ParticleSystemSoA;
 
 /**
@@ -35,11 +36,5 @@ void UpdateParticlesSoA(ParticleSystemSoA* system, uint32_t count, float deltaTi
  * @param count The total number of particles to draw
  */
 void DrawParticlesSoA(const ParticleSystemSoA* system, uint32_t count);
-
-/**
- * @brief Frees the dynamically allocated memory for all internal component arrays
- * @param system Pointer to the SoA struct to clean up
- */
-void FreeParticlesSoA(ParticleSystemSoA* system);
 
 #endif

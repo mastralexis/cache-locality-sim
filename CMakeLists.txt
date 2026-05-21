@@ -22,8 +22,12 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/include/raygui.h")
 endif()
 
 
-file(GLOB SOURCES "src/*.c")
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME}
+    src/main.c
+    src/menu.c
+    src/app.c
+    src/simulation.c
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
