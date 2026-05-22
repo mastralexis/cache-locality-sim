@@ -24,7 +24,12 @@ struct SimulationState
     PhysicsDrawFn render;
     PhysicsCleanFn cleanup;
 
-    double lastPhysicsLoopUpdate; // to compare AoS and SoA
+    // For the results screen
+    double lastPhysicsLoopUpdate; // time for the current frame
+    double accumulatedPhusicsTime;// sum of all frame times
+    double totalElapsedTime;        // time since simulation started
+    uint32_t totalFrames;           // how many frames have passed
+    double finalAverageTimeMs;      // the final metric
 };
 
 /**

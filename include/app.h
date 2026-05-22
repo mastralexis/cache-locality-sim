@@ -18,5 +18,6 @@ struct AppContext
 
 void SwitchToMenuScreen(AppContext* appContext);
 void SwitchToSimulationScreen(AppContext* appContext);
+void SwitchToResultsScreen(AppContext* appContext);
 
 #endif

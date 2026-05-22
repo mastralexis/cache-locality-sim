@@ -2,17 +2,15 @@
 #define PARTICLE_SOA_H
 
 #include "common.h"
+#include "raylib.h"
 
 // Data Oriented Approach
 typedef struct {
-    float* posX;
-    float* posY;
-    float* velX;
-    float* velY;
-    float* mass;
-    float* radius;
-    Color* color;
-    void* memoryBlock;
+    Vector2* pos;
+    Vector2* vel;
+    float*   mass;
+    Color*   color;
+    void*    memoryBlock;
 } ParticleSystemSoA;
 
 /**

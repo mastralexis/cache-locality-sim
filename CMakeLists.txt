@@ -27,6 +27,9 @@ add_executable(${PROJECT_NAME}
     src/menu.c
     src/app.c
     src/simulation.c
+    src/results.c
+    src/particle_aos.c
+    src/particle_soa.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)

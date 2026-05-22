@@ -1,6 +1,7 @@
 #include "app.h"
 #include "menu.h"
 #include "simulation.h"
+#include "results.h"
 #include <raylib.h>
 #include <stdbool.h>
 
@@ -29,9 +30,20 @@ static void RenderMenu(AppContext* appContext)
 
 //                     Simulation Screen
 // -------------------------------------------------------------
-static void UpdateSimScreen(AppContext* appContext, float delta)
+static void UpdateSim(AppContext* appContext, float delta)
 {
     UpdateSimulation(&appContext->simState, delta);
+
+    // check for the 10 second timer
+    // if true calculate the results 
+    if (appContext->simState.totalElapsedTime >= 10.0)
+    {
+        appContext->simState.finalAverageTimeMs = 
+            (appContext->simState.accumulatedPhusicsTime / appContext->simState.totalFrames) * 1000.0;
+        CleanSimulation(&appContext->simState);  // clean up the memory
+        SwitchToResultsScreen(appContext);
+    }
+
     if (IsKeyPressed(KEY_ESCAPE)) 
     {
         CleanSimulation(&appContext->simState);
@@ -41,6 +53,7 @@ static void UpdateSimScreen(AppContext* appContext, float delta)
 
 static void RenderSim(AppContext* appContext)
 {
+    ClearBackground(WHITE);
     DrawSimulation(&appContext->simState);
 }
 // -------------------------------------------------------------
@@ -55,7 +68,13 @@ void SwitchToMenuScreen(AppContext* context)
 
 void SwitchToSimulationScreen(AppContext* context)
 {
-    context->update = UpdateSimScreen;
+    context->update = UpdateSim;
     context->render = RenderSim;
+}
+
+void SwitchToResultsScreen(AppContext* appContext)
+{
+    appContext->update = UpdateResults;
+    appContext->render = RenderResults;
 }
 // -------------------------------------------------------------

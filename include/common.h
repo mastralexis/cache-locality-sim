@@ -16,7 +16,8 @@
 typedef enum {
     MODE_MENU = 0,
     MODE_AOS,
-    MODE_SOA
+    MODE_SOA,
+    MODE_RESULT
 } SimulationMode;
 
 #endif // !COMMON_H

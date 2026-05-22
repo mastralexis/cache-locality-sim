@@ -8,8 +8,9 @@
 typedef struct {
     Vector2 pos;
     Vector2 vel;
-    float mass;
+    float mass; // useless data
     Color color;
+    float uselessOOPData[16];
 } ParticleAoS;
 
 /**
