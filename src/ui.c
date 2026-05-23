@@ -1,0 +1,46 @@
+#include "ui.h"
+#include "raylib.h"
+#include "common.h"
+#include <stdio.h>
+
+void DrawTelemetryUI(const SimulationState* state)
+{
+    // semi-transparent background panel for readability
+    DrawRectangle(10, 10, 340, 170, Fade(BLACK, 0.75f));
+    DrawRectangleLines(10, 10, 340, 170, RAYWHITE);
+
+    // determine the text for the current modes
+    const char* modeText = (state->mode == MODE_AOS) ? "Architecture: AoS (OOP)" : "Architecture: SoA (DOD)";
+    const char* physicsText = state->physicsEnabled ? "Physics: O(N^2) Collisions" : "Physics: Simple Bouncing";
+
+    // calculate CPU timings in milliseconds
+    double currentFrameMs = state->lastPhysicsLoopUpdate * 1000.0;
+    double avgTimeMs = 0.0;
+    if (state->totalFrames > 0) {
+        avgTimeMs = (state->accumulatedPhusicsTime / state->totalFrames) * 1000.0;
+    }
+
+    char buffer[128];
+
+    // render the Data
+    // FPS
+    sprintf(buffer, "FPS: %d", GetFPS());
+    DrawText(buffer, 25, 20, 20, GREEN);
+
+    // Mode
+    DrawText(modeText, 25, 50, 20, WHITE);
+
+    // Physics State
+    DrawText(physicsText, 25, 80, 20, LIGHTGRAY);
+
+    // Particle Count
+    sprintf(buffer, "Particles: %u", state->particleCount);
+    DrawText(buffer, 25, 110, 20, WHITE);
+
+    // CPU Times (Current vs Average)
+    sprintf(buffer, "CPU: %.2f ms (Avg: %.2f ms)", currentFrameMs, avgTimeMs);
+    
+    // Make the text turn red if the CPU is struggling (taking longer than 16ms per frame)
+    Color cpuColor = (avgTimeMs > 16.0) ? RED : YELLOW;
+    DrawText(buffer, 25, 140, 20, cpuColor);
+}

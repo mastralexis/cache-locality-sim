@@ -10,7 +10,6 @@ typedef struct {
     Vector2 vel;
     float mass; // useless data
     Color color;
-    float uselessOOPData[16];
 } ParticleAoS;
 
 /**
@@ -26,7 +25,8 @@ void InitParticlesAoS(ParticleAoS* particles, uint32_t const);
  * @param count The total number of particles to update
  * @param delta The time passed since the last frame
  */
-void UpdateParticlesAoS(ParticleAoS* particles, uint32_t count, float delta);
+void UpdateParticlesAoS_Simple(ParticleAoS* particles, uint32_t count, float delta);
+void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float delta);
 
 /**
  * @brief Renders all particles to the screen

@@ -1,19 +1,22 @@
 #include "particle_soa.h"
 #include "common.h"
 #include <raylib.h>
+#include <math.h>
+
+#define ALIGN64(size) (((size) + 63) & ~63)
 
 void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
     char* currentPtr = (char*)soa->memoryBlock;
 
     soa->pos = (Vector2*)currentPtr;
-    currentPtr += count * sizeof(Vector2);
+    currentPtr += ALIGN64(count * sizeof(Vector2));
 
     soa->vel = (Vector2*)currentPtr;
-    currentPtr += count * sizeof(Vector2);
+    currentPtr += ALIGN64(count * sizeof(Vector2));
 
     soa->color = (Color*)currentPtr;
-    currentPtr += count * sizeof(Color);
+    currentPtr += ALIGN64(count * sizeof(Color));
 
     soa->mass = (float*)currentPtr;
 
@@ -36,34 +39,55 @@ void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
     }
 }
 
-void UpdateParticlesSoA(ParticleSystemSoA* soa, uint32_t count, float delta)
+void UpdateParticlesSoA_Simple(ParticleSystemSoA* soa, uint32_t count, float delta)
 {
+    Vector2* restrict pos = soa->pos;
+    Vector2* restrict vel = soa->vel;
     for (uint32_t i = 0; i < count; i++)
     {
-        soa->pos[i].x += soa->vel[i].x * delta;
-        soa->pos[i].y += soa->vel[i].y * delta;
+        pos[i].x += vel[i].x * delta;
+        pos[i].y += vel[i].y * delta;
+    }
+}
 
-        // if (soa->pos[i].x <= 0) 
-        // {
-        //     soa->pos[i].x = 0; 
-        //     soa->vel[i].x *= -1.0f;
-        // }
-        // else if (soa->pos[i].x >= SCREEN_WIDTH) 
-        // {
-        //     soa->pos[i].x = SCREEN_WIDTH;
-        //     soa->vel[i].x *= -1.0f;
-        // }
-        //
-        // if (soa->pos[i].y <= 0) 
-        // {
-        //     soa->pos[i].y = 0;
-        //     soa->vel[i].y *= -1.0f;
-        // }
-        // else if (soa->pos[i].y >= SCREEN_HEIGHT) 
-        // {
-        //     soa->pos[i].y = SCREEN_HEIGHT;
-        //     soa->vel[i].y *= -1.0f;
-        // }
+void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float delta)
+{
+    Vector2* restrict pos = soa->pos;
+    Vector2* restrict vel = soa->vel;
+
+    for (uint32_t i = 0; i < count; i++)
+    {
+        for (uint32_t j = i + 1; j < count; j++)
+        {
+            float dx = pos[j].x - pos[i].x;
+            float dy = pos[j].y - pos[i].y;
+            float distSq = (dx * dx) + (dy * dy);
+            
+            if (distSq < 16.0f && distSq > 0.0001f)
+            {
+                float dist = sqrtf(distSq);
+                float overlap = 4.0f - dist;
+                float nx = dx / dist;
+                float ny = dy / dist;
+                
+                pos[i].x -= nx * overlap * 0.5f;
+                pos[i].y -= ny * overlap * 0.5f;
+                pos[j].x += nx * overlap * 0.5f;
+                pos[j].y += ny * overlap * 0.5f;
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < count; i++)
+    {
+        pos[i].x += vel[i].x * delta;
+        pos[i].y += vel[i].y * delta;
+
+        pos[i].x = fmaxf(0.0f, fminf(SCREEN_WIDTH, pos[i].x));
+        pos[i].y = fmaxf(0.0f, fminf(SCREEN_HEIGHT, pos[i].y));
+
+        vel[i].x = (pos[i].x <= 0.0f || pos[i].x >= SCREEN_WIDTH) ? -vel[i].x : vel[i].x;
+        vel[i].y = (pos[i].y <= 0.0f || pos[i].y >= SCREEN_HEIGHT) ? -vel[i].y : vel[i].y;
     }
 }
 

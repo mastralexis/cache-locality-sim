@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "simulation.h"
 #include "results.h"
+#include "ui.h"
 #include <raylib.h>
 #include <stdbool.h>
 
@@ -14,7 +15,8 @@ static void UpdateMenu(AppContext* appContext, float delta)
         InitSimulation(
             &appContext->simState,
             appContext->menuState.selectedMode,
-            appContext->menuState.selectedParticleCount
+            appContext->menuState.selectedParticleCount,
+            appContext->menuState.physicsEnabled
         );
         appContext->menuState.isStartPressed = false;
         SwitchToSimulationScreen(appContext);
@@ -55,6 +57,7 @@ static void RenderSim(AppContext* appContext)
 {
     ClearBackground(WHITE);
     DrawSimulation(&appContext->simState);
+    DrawTelemetryUI(&appContext->simState);
 }
 // -------------------------------------------------------------
 

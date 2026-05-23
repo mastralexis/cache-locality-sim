@@ -2,22 +2,30 @@
 #include "particle_aos.h"
 #include "particle_soa.h"
 #include "raylib.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ALIGN64(size) (((size) + 63) & ~63)
+
 // Wrappers to pass the correct data structure to the functions
 // ------------------------------------------------------------
-static void aos_update(SimulationState* state, float delta) 
+static void aos_update_simple(SimulationState* state, float delta) 
 {
-    UpdateParticlesAoS(state->data.aos, state->particleCount, delta);
+    UpdateParticlesAoS_Simple(state->data.aos, state->particleCount, delta);
+}
+
+static void aos_update_physics(SimulationState* state, float delta) 
+{
+    UpdateParticlesAoS_Physics(state->data.aos, state->particleCount, delta);
 }
 
 static void aos_render(const SimulationState* state) 
 {
-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
-    DrawParticlesAoS(state->data.aos, drawCount);
+    // uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+    // DrawParticlesAoS(state->data.aos, state->particleCount);
 }
 
 static void aos_cleanup(SimulationState* state)
@@ -29,15 +37,19 @@ static void aos_cleanup(SimulationState* state)
     }
 }
 
-static void soa_update(SimulationState* state, float delta)
+static void soa_update_simple(SimulationState* state, float delta) 
 {
-    UpdateParticlesSoA(&state->data.soa, state->particleCount, delta);
+    UpdateParticlesSoA_Simple(&state->data.soa, state->particleCount, delta);
+}
+static void soa_update_physics(SimulationState* state, float delta) 
+{
+    UpdateParticlesSoA_Physics(&state->data.soa, state->particleCount, delta);
 }
 
 static void soa_render(const SimulationState* state)
 {
-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
-    DrawParticlesSoA(&state->data.soa, drawCount);
+    // uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+    // DrawParticlesSoA(&state->data.soa, state->particleCount);
 }
 
 static void soa_cleanup(SimulationState* state)
@@ -49,33 +61,37 @@ static void soa_cleanup(SimulationState* state)
     }
 }
 
-void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount)
+void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount, bool physicsEnabled)
 {
     simState->mode = selectedMode;
     simState->particleCount = particleCount;
+    simState->physicsEnabled = physicsEnabled;
     simState->lastPhysicsLoopUpdate = 0.0;
     simState->accumulatedPhusicsTime = 0.0;
     simState->totalElapsedTime = 0.0;
     simState->totalFrames = 0.0;
+    SetRandomSeed(42);    // so the tests can be the same every time
 
     switch (selectedMode) 
     {
         case MODE_AOS:
             simState->data.aos = (ParticleAoS*) malloc(particleCount * sizeof(ParticleAoS));
             InitParticlesAoS(simState->data.aos, particleCount);
-            simState->update   = aos_update;
+            if (physicsEnabled) simState->update = aos_update_physics;
+            else                simState->update = aos_update_simple;
             simState->render   = aos_render;
             simState->cleanup  = aos_cleanup;
             break;
         case MODE_SOA:
-            // mass allocation
-            size_t totalBytes = (particleCount * sizeof(Vector2)) + // pos
-                                (particleCount * sizeof(Vector2)) + // vel
-                                (particleCount * sizeof(Color)) +   // color
-                                (particleCount * sizeof(float));    // mass
-            simState->data.soa.memoryBlock = malloc(totalBytes);
+            // mass allocation with alignment
+            size_t posSize = ALIGN64(particleCount * sizeof(Vector2));
+            size_t velSize = ALIGN64(particleCount * sizeof(Vector2));
+            size_t colSize = ALIGN64(particleCount * sizeof(Color));
+            size_t masSize = ALIGN64(particleCount * sizeof(float));
+            simState->data.soa.memoryBlock = malloc(posSize + velSize + colSize + masSize);
             InitParticlesSoA(&simState->data.soa, particleCount);
-            simState->update   = soa_update;
+            if (physicsEnabled) simState->update = soa_update_physics;
+            else                simState->update = soa_update_simple;
             simState->render   = soa_render;
             simState->cleanup  = soa_cleanup;
             break;

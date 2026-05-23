@@ -1,0 +1,552 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2dc28d6..2e1f9f5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,6 +6,11 @@ if(POLICY CMP0135)
+ endif()
+ 
+ project(cache-locality-sim VERSION 1.0 DESCRIPTION "Cache Locality Simulation" LANGUAGES C)
++if(NOT CMAKE_BUILD_TYPE)
++    set(CMAKE_BUILD_TYPE Release)
++endif()
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
++
+ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+ 
+ set(CMAKE_C_STANDARD 11)
+@@ -30,6 +35,7 @@ add_executable(${PROJECT_NAME}
+     src/results.c
+     src/particle_aos.c
+     src/particle_soa.c
++    src/ui.c
+ )
+ 
+ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+diff --git a/include/common.h b/include/common.h
+index 779b7fe..b207551 100644
+--- a/include/common.h
++++ b/include/common.h
+@@ -4,9 +4,13 @@
+ #include <raylib.h>
+ #include <stdint.h>
+ 
+-#define PARTICLES_LOW 10000
+-#define PARTICLES_MED 100000
+-#define PARTICLES_HIGH 1000000
++#define PARTICLES_LOW 50000     // 3.2 mb
++#define PARTICLES_MED 500000    // 32 mb
++#define PARTICLES_HIGH 2000000  // 128 mb
++#define PARTICLES_LOW_WITH_PHYSICS 1000
++#define PARTICLES_MED_WITH_PHYSICS 5000
++#define PARTICLES_HIGH_WITH_PHYSICS 15000
++
+ #define SCREEN_WIDTH 1280
+ #define SCREEN_HEIGHT 720
+ #define UNCAPPED 0
+diff --git a/include/menu.h b/include/menu.h
+index b1293ed..915274e 100644
+--- a/include/menu.h
++++ b/include/menu.h
+@@ -11,7 +11,9 @@ typedef struct {
+     uint32_t selectedParticleCount;
+     bool isStartPressed;
+     int guiModeToggle;  
++    int guiPhysicsToggle;
+     int guiCountToggle;
++    bool physicsEnabled;
+ } MenuState;
+ 
+ /**
+diff --git a/include/particle_aos.h b/include/particle_aos.h
+index e1dbd6a..f55b915 100644
+--- a/include/particle_aos.h
++++ b/include/particle_aos.h
+@@ -10,7 +10,6 @@ typedef struct {
+     Vector2 vel;
+     float mass; // useless data
+     Color color;
+-    float uselessOOPData[16];
+ } ParticleAoS;
+ 
+ /**
+@@ -26,7 +25,8 @@ void InitParticlesAoS(ParticleAoS* particles, uint32_t const);
+  * @param count The total number of particles to update
+  * @param delta The time passed since the last frame
+  */
+-void UpdateParticlesAoS(ParticleAoS* particles, uint32_t count, float delta);
++void UpdateParticlesAoS_Simple(ParticleAoS* particles, uint32_t count, float delta);
++void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float delta);
+ 
+ /**
+  * @brief Renders all particles to the screen
+diff --git a/include/particle_soa.h b/include/particle_soa.h
+index e5f0793..f8113e1 100644
+--- a/include/particle_soa.h
++++ b/include/particle_soa.h
+@@ -26,7 +26,8 @@ void InitParticlesSoA(ParticleSystemSoA* system, uint32_t count);
+  * @param count The total number of particles to update
+  * @param delta The time passed since the last frame
+  */
+-void UpdateParticlesSoA(ParticleSystemSoA* system, uint32_t count, float deltaTime);
++void UpdateParticlesSoA_Simple(ParticleSystemSoA* system, uint32_t count, float deltaTime);
++void UpdateParticlesSoA_Physics(ParticleSystemSoA* system, uint32_t count, float deltaTime);
+ 
+ /**
+  * @brief Renders all particles to the screen by reading from the necessary component arrays
+diff --git a/include/simulation.h b/include/simulation.h
+index 9ba158b..adfd164 100644
+--- a/include/simulation.h
++++ b/include/simulation.h
+@@ -30,6 +30,7 @@ struct SimulationState
+     double totalElapsedTime;        // time since simulation started
+     uint32_t totalFrames;           // how many frames have passed
+     double finalAverageTimeMs;      // the final metric
++    bool physicsEnabled;
+ };
+ 
+ /**
+@@ -38,7 +39,7 @@ struct SimulationState
+  * @param targetMode The mode chosen
+  * @param initialCount The starting number of particles
+  */
+-void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount);
++void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount, bool physicsEnabled);
+ 
+ /**
+  * @brief Triggers the physics update for the active paradigm
+diff --git a/src/app.c b/src/app.c
+index e7edfe8..a979c7c 100644
+--- a/src/app.c
++++ b/src/app.c
+@@ -2,6 +2,7 @@
+ #include "menu.h"
+ #include "simulation.h"
+ #include "results.h"
++#include "ui.h"
+ #include <raylib.h>
+ #include <stdbool.h>
+ 
+@@ -14,7 +15,8 @@ static void UpdateMenu(AppContext* appContext, float delta)
+         InitSimulation(
+             &appContext->simState,
+             appContext->menuState.selectedMode,
+-            appContext->menuState.selectedParticleCount
++            appContext->menuState.selectedParticleCount,
++            appContext->menuState.physicsEnabled
+         );
+         appContext->menuState.isStartPressed = false;
+         SwitchToSimulationScreen(appContext);
+@@ -55,6 +57,7 @@ static void RenderSim(AppContext* appContext)
+ {
+     ClearBackground(WHITE);
+     DrawSimulation(&appContext->simState);
++    DrawTelemetryUI(&appContext->simState);
+ }
+ // -------------------------------------------------------------
+ 
+diff --git a/src/menu.c b/src/menu.c
+index 4fc45c4..c394878 100644
+--- a/src/menu.c
++++ b/src/menu.c
+@@ -12,54 +12,59 @@ void InitMenuState(MenuState* state)
+     state->selectedParticleCount = 100000;  // for now
+     state->isStartPressed = false;
+     state->guiModeToggle = 0;
++    state->guiPhysicsToggle = 0;
+     state->guiCountToggle = 1;
++    state->physicsEnabled = false;
+ }
+ 
+ void UpdateAndDrawMenu(MenuState* menuState)
+ {
+     ClearBackground(RAYWHITE);
+-    DrawText(
+-        PROJECTNAME,
+-        400,
+-        100,
+-        40,
+-        DARKGRAY
+-    );
+ 
+-    DrawText(
+-        "Select Memory Layout:",
+-        400,
+-        250,
+-        20,
+-        DARKGRAY
+-    );
+-    GuiToggleGroup(
+-        (Rectangle){ 400, 280, 180, 40 },
+-        "AoS (OOP);SoA (DOD)",
+-        &menuState->guiModeToggle
+-    );
++    int screenWidth = GetScreenWidth();
++    int centerX = screenWidth / 2;
+ 
+-    if (menuState->guiModeToggle == 0) menuState->selectedMode = MODE_AOS;
+-    else menuState->selectedMode = MODE_SOA;
++    #define DrawCenteredText(text, y, fontSize, color) \
++        DrawText(text, centerX - (MeasureText(text, fontSize) / 2), y, fontSize, color)
++    
++    DrawCenteredText(PROJECTNAME, 80, 40, DARKGRAY);
+ 
+-    DrawText(
+-        "Select Workload:",
+-        400,
+-        360,
+-        20,
+-        DARKGRAY
+-    );
+-    GuiToggleGroup(
+-        (Rectangle){ 400, 390, 120, 40 },
+-        "10,000;100,000;1,000,000",
+-        &menuState->guiCountToggle
+-    );
++    // --- ROW 1: 2 buttons. Let's make each button 140px wide. Total width = 280.
++    // To center, we subtract half the total width (140) from centerX.
++    DrawCenteredText("Select Memory Layout:", 180, 20, DARKGRAY);
++    GuiToggleGroup((Rectangle){ centerX - 140, 210, 140, 40 }, "AoS (OOP);SoA (DOD)", &menuState->guiModeToggle);
++    menuState->selectedMode = (menuState->guiModeToggle == 0) ? MODE_AOS : MODE_SOA;
+ 
+-    if (menuState->guiCountToggle == 0) menuState->selectedParticleCount =      PARTICLES_LOW;
+-    else if (menuState->guiCountToggle == 1) menuState->selectedParticleCount = PARTICLES_MED;
+-    else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH;
++    // --- ROW 2: 2 buttons. Let's make each button 160px wide. Total width = 320.
++    // To center, we subtract half the total width (160) from centerX.
++    DrawCenteredText("Select Physics Complexity:", 290, 20, DARKGRAY);
++    GuiToggleGroup((Rectangle){ centerX - 160, 320, 160, 40 }, "No Collisions;O(N^2) Collisions", &menuState->guiPhysicsToggle);
++    menuState->physicsEnabled = (menuState->guiPhysicsToggle == 1);
+ 
+-    if (GuiButton((Rectangle){ 400, 500, 365, 60 }, "START SIMULATION")) 
++    // --- ROW 3: 3 buttons. Let's make each button 100px wide. Total width = 300.
++    // To center, we subtract half the total width (150) from centerX.
++    DrawCenteredText("Select Workload:", 400, 20, DARKGRAY);
++    
++    if (!menuState->physicsEnabled) 
++    {
++        GuiToggleGroup((Rectangle){ centerX - 150, 430, 100, 40 }, "50k;500k;2M", &menuState->guiCountToggle);
++        
++        if (menuState->guiCountToggle == 0) menuState->selectedParticleCount = PARTICLES_LOW;
++        else if (menuState->guiCountToggle == 1) menuState->selectedParticleCount = PARTICLES_MED;
++        else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH;
++    } 
++    else 
++    {
++        GuiToggleGroup((Rectangle){ centerX - 150, 430, 100, 40 }, "1k;5k;15k", &menuState->guiCountToggle);
++        
++        if (menuState->guiCountToggle == 0) menuState->selectedParticleCount = PARTICLES_LOW_WITH_PHYSICS;
++        else if (menuState->guiCountToggle == 1) menuState->selectedParticleCount = PARTICLES_MED_WITH_PHYSICS;
++        else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH_WITH_PHYSICS;
++    }
++
++    // --- START BUTTON ---
++    // Make the start button 360px wide. Center by subtracting 180.
++    if (GuiButton((Rectangle){ centerX - 180, 520, 360, 60 }, "START SIMULATION")) 
+     {
+         menuState->isStartPressed = true;
+     }
+diff --git a/src/particle_aos.c b/src/particle_aos.c
+index 3ed9c4b..dd33508 100644
+--- a/src/particle_aos.c
++++ b/src/particle_aos.c
+@@ -2,6 +2,7 @@
+ #include "common.h"
+ #include <raylib.h>
+ #include <stdlib.h>
++#include <math.h>
+ 
+ void InitParticlesAoS(ParticleAoS *particles, uint32_t count)
+ {
+@@ -22,34 +23,50 @@ void InitParticlesAoS(ParticleAoS *particles, uint32_t count)
+     }
+ }
+ 
+-void UpdateParticlesAoS(ParticleAoS* particles, uint32_t count, float delta)
++void UpdateParticlesAoS_Simple(ParticleAoS* particles, uint32_t count, float delta)
+ {
+     for (uint32_t i = 0; i < count; i++)
+     {
+         particles[i].pos.x += particles[i].vel.x * delta;
+         particles[i].pos.y += particles[i].vel.y * delta;
++    }
++}
++
++void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float delta)
++{
++    for (uint32_t i = 0; i < count; i++)
++    {
++        for (uint32_t j = i + 1; j < count; j++)
++        {
++            float dx = particles[j].pos.x - particles[i].pos.x;
++            float dy = particles[j].pos.y - particles[i].pos.y;
++            float distSq = (dx * dx) + (dy * dy);
++            
++            if (distSq < 16.0f && distSq > 0.0001f)
++            {
++                float dist = sqrtf(distSq);
++                float overlap = 4.0f - dist;
++                float nx = dx / dist;
++                float ny = dy / dist;
++                
++                particles[i].pos.x -= nx * overlap * 0.5f;
++                particles[i].pos.y -= ny * overlap * 0.5f;
++                particles[j].pos.x += nx * overlap * 0.5f;
++                particles[j].pos.y += ny * overlap * 0.5f;
++            }
++        }
++    }
++
++    for (uint32_t i = 0; i < count; i++)
++    {
++        particles[i].pos.x += particles[i].vel.x * delta;
++        particles[i].pos.y += particles[i].vel.y * delta;
++
++        particles[i].pos.x = fmaxf(0.0f, fminf(SCREEN_WIDTH, particles[i].pos.x));
++        particles[i].pos.y = fmaxf(0.0f, fminf(SCREEN_HEIGHT, particles[i].pos.y));
+ 
+-        // if (particles[i].pos.x <= 0) 
+-        // {
+-        //     particles[i].pos.x = 0; 
+-        //     particles[i].vel.x *= -1.0f;
+-        // }
+-        // else if (particles[i].pos.x >= SCREEN_WIDTH) 
+-        // {
+-        //     particles[i].pos.x = SCREEN_WIDTH;
+-        //     particles[i].vel.x *= -1.0f;
+-        // }
+-        //
+-        // if (particles[i].pos.y <= 0) 
+-        // {
+-        //     particles[i].pos.y = 0;
+-        //     particles[i].vel.y *= -1.0f;
+-        // }
+-        // else if (particles[i].pos.y >= SCREEN_HEIGHT) 
+-        // {
+-        //     particles[i].pos.y = SCREEN_HEIGHT;
+-        //     particles[i].vel.y *= -1.0f;
+-        // }
++        particles[i].vel.x = (particles[i].pos.x <= 0.0f || particles[i].pos.x >= SCREEN_WIDTH) ? -particles[i].vel.x : particles[i].vel.x;
++        particles[i].vel.y = (particles[i].pos.y <= 0.0f || particles[i].pos.y >= SCREEN_HEIGHT) ? -particles[i].vel.y : particles[i].vel.y;
+     }
+ }
+ 
+diff --git a/src/particle_soa.c b/src/particle_soa.c
+index c85ee4e..a550a57 100644
+--- a/src/particle_soa.c
++++ b/src/particle_soa.c
+@@ -1,19 +1,22 @@
+ #include "particle_soa.h"
+ #include "common.h"
+ #include <raylib.h>
++#include <math.h>
++
++#define ALIGN64(size) (((size) + 63) & ~63)
+ 
+ void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
+ {
+     char* currentPtr = (char*)soa->memoryBlock;
+ 
+     soa->pos = (Vector2*)currentPtr;
+-    currentPtr += count * sizeof(Vector2);
++    currentPtr += ALIGN64(count * sizeof(Vector2));
+ 
+     soa->vel = (Vector2*)currentPtr;
+-    currentPtr += count * sizeof(Vector2);
++    currentPtr += ALIGN64(count * sizeof(Vector2));
+ 
+     soa->color = (Color*)currentPtr;
+-    currentPtr += count * sizeof(Color);
++    currentPtr += ALIGN64(count * sizeof(Color));
+ 
+     soa->mass = (float*)currentPtr;
+ 
+@@ -36,34 +39,55 @@ void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
+     }
+ }
+ 
+-void UpdateParticlesSoA(ParticleSystemSoA* soa, uint32_t count, float delta)
++void UpdateParticlesSoA_Simple(ParticleSystemSoA* soa, uint32_t count, float delta)
+ {
++    Vector2* restrict pos = soa->pos;
++    Vector2* restrict vel = soa->vel;
+     for (uint32_t i = 0; i < count; i++)
+     {
+-        soa->pos[i].x += soa->vel[i].x * delta;
+-        soa->pos[i].y += soa->vel[i].y * delta;
++        pos[i].x += vel[i].x * delta;
++        pos[i].y += vel[i].y * delta;
++    }
++}
++
++void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float delta)
++{
++    Vector2* restrict pos = soa->pos;
++    Vector2* restrict vel = soa->vel;
++
++    for (uint32_t i = 0; i < count; i++)
++    {
++        for (uint32_t j = i + 1; j < count; j++)
++        {
++            float dx = pos[j].x - pos[i].x;
++            float dy = pos[j].y - pos[i].y;
++            float distSq = (dx * dx) + (dy * dy);
++            
++            if (distSq < 16.0f && distSq > 0.0001f)
++            {
++                float dist = sqrtf(distSq);
++                float overlap = 4.0f - dist;
++                float nx = dx / dist;
++                float ny = dy / dist;
++                
++                pos[i].x -= nx * overlap * 0.5f;
++                pos[i].y -= ny * overlap * 0.5f;
++                pos[j].x += nx * overlap * 0.5f;
++                pos[j].y += ny * overlap * 0.5f;
++            }
++        }
++    }
++
++    for (uint32_t i = 0; i < count; i++)
++    {
++        pos[i].x += vel[i].x * delta;
++        pos[i].y += vel[i].y * delta;
++
++        pos[i].x = fmaxf(0.0f, fminf(SCREEN_WIDTH, pos[i].x));
++        pos[i].y = fmaxf(0.0f, fminf(SCREEN_HEIGHT, pos[i].y));
+ 
+-        // if (soa->pos[i].x <= 0) 
+-        // {
+-        //     soa->pos[i].x = 0; 
+-        //     soa->vel[i].x *= -1.0f;
+-        // }
+-        // else if (soa->pos[i].x >= SCREEN_WIDTH) 
+-        // {
+-        //     soa->pos[i].x = SCREEN_WIDTH;
+-        //     soa->vel[i].x *= -1.0f;
+-        // }
+-        //
+-        // if (soa->pos[i].y <= 0) 
+-        // {
+-        //     soa->pos[i].y = 0;
+-        //     soa->vel[i].y *= -1.0f;
+-        // }
+-        // else if (soa->pos[i].y >= SCREEN_HEIGHT) 
+-        // {
+-        //     soa->pos[i].y = SCREEN_HEIGHT;
+-        //     soa->vel[i].y *= -1.0f;
+-        // }
++        vel[i].x = (pos[i].x <= 0.0f || pos[i].x >= SCREEN_WIDTH) ? -vel[i].x : vel[i].x;
++        vel[i].y = (pos[i].y <= 0.0f || pos[i].y >= SCREEN_HEIGHT) ? -vel[i].y : vel[i].y;
+     }
+ }
+ 
+diff --git a/src/simulation.c b/src/simulation.c
+index 7fc6b2e..21f93bf 100644
+--- a/src/simulation.c
++++ b/src/simulation.c
+@@ -2,22 +2,30 @@
+ #include "particle_aos.h"
+ #include "particle_soa.h"
+ #include "raylib.h"
++#include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
++#define ALIGN64(size) (((size) + 63) & ~63)
++
+ // Wrappers to pass the correct data structure to the functions
+ // ------------------------------------------------------------
+-static void aos_update(SimulationState* state, float delta) 
++static void aos_update_simple(SimulationState* state, float delta) 
++{
++    UpdateParticlesAoS_Simple(state->data.aos, state->particleCount, delta);
++}
++
++static void aos_update_physics(SimulationState* state, float delta) 
+ {
+-    UpdateParticlesAoS(state->data.aos, state->particleCount, delta);
++    UpdateParticlesAoS_Physics(state->data.aos, state->particleCount, delta);
+ }
+ 
+ static void aos_render(const SimulationState* state) 
+ {
+-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+-    DrawParticlesAoS(state->data.aos, drawCount);
++    // uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
++    // DrawParticlesAoS(state->data.aos, state->particleCount);
+ }
+ 
+ static void aos_cleanup(SimulationState* state)
+@@ -29,15 +37,19 @@ static void aos_cleanup(SimulationState* state)
+     }
+ }
+ 
+-static void soa_update(SimulationState* state, float delta)
++static void soa_update_simple(SimulationState* state, float delta) 
++{
++    UpdateParticlesSoA_Simple(&state->data.soa, state->particleCount, delta);
++}
++static void soa_update_physics(SimulationState* state, float delta) 
+ {
+-    UpdateParticlesSoA(&state->data.soa, state->particleCount, delta);
++    UpdateParticlesSoA_Physics(&state->data.soa, state->particleCount, delta);
+ }
+ 
+ static void soa_render(const SimulationState* state)
+ {
+-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+-    DrawParticlesSoA(&state->data.soa, drawCount);
++    // uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
++    // DrawParticlesSoA(&state->data.soa, state->particleCount);
+ }
+ 
+ static void soa_cleanup(SimulationState* state)
+@@ -49,33 +61,37 @@ static void soa_cleanup(SimulationState* state)
+     }
+ }
+ 
+-void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount)
++void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount, bool physicsEnabled)
+ {
+     simState->mode = selectedMode;
+     simState->particleCount = particleCount;
++    simState->physicsEnabled = physicsEnabled;
+     simState->lastPhysicsLoopUpdate = 0.0;
+     simState->accumulatedPhusicsTime = 0.0;
+     simState->totalElapsedTime = 0.0;
+     simState->totalFrames = 0.0;
++    SetRandomSeed(42);    // so the tests can be the same every time
+ 
+     switch (selectedMode) 
+     {
+         case MODE_AOS:
+             simState->data.aos = (ParticleAoS*) malloc(particleCount * sizeof(ParticleAoS));
+             InitParticlesAoS(simState->data.aos, particleCount);
+-            simState->update   = aos_update;
++            if (physicsEnabled) simState->update = aos_update_physics;
++            else                simState->update = aos_update_simple;
+             simState->render   = aos_render;
+             simState->cleanup  = aos_cleanup;
+             break;
+         case MODE_SOA:
+-            // mass allocation
+-            size_t totalBytes = (particleCount * sizeof(Vector2)) + // pos
+-                                (particleCount * sizeof(Vector2)) + // vel
+-                                (particleCount * sizeof(Color)) +   // color
+-                                (particleCount * sizeof(float));    // mass
+-            simState->data.soa.memoryBlock = malloc(totalBytes);
++            // mass allocation with alignment
++            size_t posSize = ALIGN64(particleCount * sizeof(Vector2));
++            size_t velSize = ALIGN64(particleCount * sizeof(Vector2));
++            size_t colSize = ALIGN64(particleCount * sizeof(Color));
++            size_t masSize = ALIGN64(particleCount * sizeof(float));
++            simState->data.soa.memoryBlock = malloc(posSize + velSize + colSize + masSize);
+             InitParticlesSoA(&simState->data.soa, particleCount);
+-            simState->update   = soa_update;
++            if (physicsEnabled) simState->update = soa_update_physics;
++            else                simState->update = soa_update_simple;
+             simState->render   = soa_render;
+             simState->cleanup  = soa_cleanup;
+             break;

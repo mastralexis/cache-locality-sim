@@ -30,6 +30,7 @@ struct SimulationState
     double totalElapsedTime;        // time since simulation started
     uint32_t totalFrames;           // how many frames have passed
     double finalAverageTimeMs;      // the final metric
+    bool physicsEnabled;
 };
 
 /**
@@ -38,7 +39,7 @@ struct SimulationState
  * @param targetMode The mode chosen
  * @param initialCount The starting number of particles
  */
-void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount);
+void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount, bool physicsEnabled);
 
 /**
  * @brief Triggers the physics update for the active paradigm

@@ -6,6 +6,11 @@ if(POLICY CMP0135)
 endif()
 
 project(cache-locality-sim VERSION 1.0 DESCRIPTION "Cache Locality Simulation" LANGUAGES C)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_C_STANDARD 11)
@@ -30,6 +35,7 @@ add_executable(${PROJECT_NAME}
     src/results.c
     src/particle_aos.c
     src/particle_soa.c
+    src/ui.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)

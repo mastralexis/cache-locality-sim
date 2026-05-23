@@ -26,7 +26,8 @@ void InitParticlesSoA(ParticleSystemSoA* system, uint32_t count);
  * @param count The total number of particles to update
  * @param delta The time passed since the last frame
  */
-void UpdateParticlesSoA(ParticleSystemSoA* system, uint32_t count, float deltaTime);
+void UpdateParticlesSoA_Simple(ParticleSystemSoA* system, uint32_t count, float deltaTime);
+void UpdateParticlesSoA_Physics(ParticleSystemSoA* system, uint32_t count, float deltaTime);
 
 /**
  * @brief Renders all particles to the screen by reading from the necessary component arrays
