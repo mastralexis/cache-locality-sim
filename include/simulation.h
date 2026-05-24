@@ -31,6 +31,7 @@ struct SimulationState
     uint32_t totalFrames;           // how many frames have passed
     double finalAverageTimeMs;      // the final metric
     bool physicsEnabled;
+    double timeAccumulator;
 };
 
 /**

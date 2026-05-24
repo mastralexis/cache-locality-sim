@@ -36,37 +36,34 @@ void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float de
 {
     for (uint32_t i = 0; i < count; i++)
     {
-        for (uint32_t j = i + 1; j < count; j++)
-        {
-            float dx = particles[j].pos.x - particles[i].pos.x;
-            float dy = particles[j].pos.y - particles[i].pos.y;
-            float distSq = (dx * dx) + (dy * dy);
-            
-            if (distSq < 16.0f && distSq > 0.0001f)
-            {
-                float dist = sqrtf(distSq);
-                float overlap = 4.0f - dist;
-                float nx = dx / dist;
-                float ny = dy / dist;
-                
-                particles[i].pos.x -= nx * overlap * 0.5f;
-                particles[i].pos.y -= ny * overlap * 0.5f;
-                particles[j].pos.x += nx * overlap * 0.5f;
-                particles[j].pos.y += ny * overlap * 0.5f;
-            }
-        }
-    }
+        particles[i].vel.y += GRAVITY_Y * delta;
+        particles[i].vel.x *= DRAG;
+        particles[i].vel.y *= DRAG;
 
-    for (uint32_t i = 0; i < count; i++)
-    {
         particles[i].pos.x += particles[i].vel.x * delta;
         particles[i].pos.y += particles[i].vel.y * delta;
 
-        particles[i].pos.x = fmaxf(0.0f, fminf(SCREEN_WIDTH, particles[i].pos.x));
-        particles[i].pos.y = fmaxf(0.0f, fminf(SCREEN_HEIGHT, particles[i].pos.y));
+        if (particles[i].pos.x <= 0.0f)
+        {
+            particles[i].pos.x = 0.0f;
+            particles[i].vel.x = -particles[i].vel.x * 0.8f;
+        }
+        else if (particles[i].pos.x >= SCREEN_WIDTH)
+        {
+            particles[i].pos.x = SCREEN_WIDTH;
+            particles[i].vel.x = -particles[i].vel.x * 0.8f;
+        }
 
-        particles[i].vel.x = (particles[i].pos.x <= 0.0f || particles[i].pos.x >= SCREEN_WIDTH) ? -particles[i].vel.x : particles[i].vel.x;
-        particles[i].vel.y = (particles[i].pos.y <= 0.0f || particles[i].pos.y >= SCREEN_HEIGHT) ? -particles[i].vel.y : particles[i].vel.y;
+        if (particles[i].pos.y <= 0.0f) 
+        {
+            particles[i].pos.y = 0.0f;
+            particles[i].vel.y = -particles[i].vel.y * 0.8f;
+        }
+        else if (particles[i].pos.y >= SCREEN_HEIGHT)
+        {
+            particles[i].pos.y = SCREEN_HEIGHT;
+            particles[i].vel.y = -particles[i].vel.y * 0.8f;
+        }
     }
 }
 

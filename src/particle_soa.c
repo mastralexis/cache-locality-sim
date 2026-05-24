@@ -57,37 +57,37 @@ void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float de
 
     for (uint32_t i = 0; i < count; i++)
     {
-        for (uint32_t j = i + 1; j < count; j++)
-        {
-            float dx = pos[j].x - pos[i].x;
-            float dy = pos[j].y - pos[i].y;
-            float distSq = (dx * dx) + (dy * dy);
-            
-            if (distSq < 16.0f && distSq > 0.0001f)
-            {
-                float dist = sqrtf(distSq);
-                float overlap = 4.0f - dist;
-                float nx = dx / dist;
-                float ny = dy / dist;
-                
-                pos[i].x -= nx * overlap * 0.5f;
-                pos[i].y -= ny * overlap * 0.5f;
-                pos[j].x += nx * overlap * 0.5f;
-                pos[j].y += ny * overlap * 0.5f;
-            }
-        }
-    }
+        // apply gravity and drag
+        vel[i].y += GRAVITY_Y * delta;
+        vel[i].x *= DRAG;
+        vel[i].y *= DRAG;
 
-    for (uint32_t i = 0; i < count; i++)
-    {
+        // integrate position
         pos[i].x += vel[i].x * delta;
         pos[i].y += vel[i].y * delta;
 
-        pos[i].x = fmaxf(0.0f, fminf(SCREEN_WIDTH, pos[i].x));
-        pos[i].y = fmaxf(0.0f, fminf(SCREEN_HEIGHT, pos[i].y));
+        // bounce off walls
+        if (pos[i].x <= 0.0f)
+        {
+            pos[i].x = 0.0f;
+            vel[i].x = -vel[i].x * 0.8f; 
+        }
+        else if (pos[i].x >= SCREEN_WIDTH) 
+        {
+            pos[i].x = SCREEN_WIDTH;
+            vel[i].x = -vel[i].x * 0.8f;
+        }
 
-        vel[i].x = (pos[i].x <= 0.0f || pos[i].x >= SCREEN_WIDTH) ? -vel[i].x : vel[i].x;
-        vel[i].y = (pos[i].y <= 0.0f || pos[i].y >= SCREEN_HEIGHT) ? -vel[i].y : vel[i].y;
+        if (pos[i].y <= 0.0f)
+        {
+            pos[i].y = 0.0f;
+            vel[i].y = -vel[i].y * 0.8f;
+        }
+        else if (pos[i].y >= SCREEN_HEIGHT)
+        {
+            pos[i].y = SCREEN_HEIGHT;
+            vel[i].y = -vel[i].y * 0.8f;
+        }
     }
 }
 

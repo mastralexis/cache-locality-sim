@@ -17,6 +17,9 @@
 #define BENCHMARK_DURATION_SECONDS 10.0
 #define PROJECTNAME "Cache Locality Simulation"
 
+#define GRAVITY_Y 98.0f
+#define DRAG 0.999f
+
 typedef enum {
     MODE_MENU = 0,
     MODE_AOS,

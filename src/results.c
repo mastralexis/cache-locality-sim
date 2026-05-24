@@ -12,7 +12,7 @@ void RenderResults(AppContext* appContext)
     ClearBackground(RAYWHITE);
     DrawText("BENCHMARK RESULTS", 400, 150, 40, DARKGRAY);
     const SimulationState* sim = &appContext->simState;
-    const char* modeText = (sim->mode == MODE_AOS) ? "Mode: Array of Structures (AoS)" : "Mode: Structure of Arrays (SoA)";
+    const char* modeText = (sim->mode == MODE_AOS) ? "Mode: Array of Structures" : "Mode: Structure of Arrays";
     DrawText(modeText, 400, 250, 20, DARKBLUE);
     DrawText(TextFormat("Particles: %u", sim->particleCount), 400, 290, 20, DARKBLUE);
     DrawText(TextFormat("Total Frames Computed: %u", sim->totalFrames), 400, 360, 20, DARKGRAY);

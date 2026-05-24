@@ -29,20 +29,14 @@ void UpdateAndDrawMenu(MenuState* menuState)
     
     DrawCenteredText(PROJECTNAME, 80, 40, DARKGRAY);
 
-    // --- ROW 1: 2 buttons. Let's make each button 140px wide. Total width = 280.
-    // To center, we subtract half the total width (140) from centerX.
     DrawCenteredText("Select Memory Layout:", 180, 20, DARKGRAY);
     GuiToggleGroup((Rectangle){ centerX - 140, 210, 140, 40 }, "AoS (OOP);SoA (DOD)", &menuState->guiModeToggle);
     menuState->selectedMode = (menuState->guiModeToggle == 0) ? MODE_AOS : MODE_SOA;
 
-    // --- ROW 2: 2 buttons. Let's make each button 160px wide. Total width = 320.
-    // To center, we subtract half the total width (160) from centerX.
     DrawCenteredText("Select Physics Complexity:", 290, 20, DARKGRAY);
-    GuiToggleGroup((Rectangle){ centerX - 160, 320, 160, 40 }, "No Collisions;O(N^2) Collisions", &menuState->guiPhysicsToggle);
+    GuiToggleGroup((Rectangle){ centerX - 160, 320, 160, 40 }, "No Collisions;Gravity and Wall Checking", &menuState->guiPhysicsToggle);
     menuState->physicsEnabled = (menuState->guiPhysicsToggle == 1);
 
-    // --- ROW 3: 3 buttons. Let's make each button 100px wide. Total width = 300.
-    // To center, we subtract half the total width (150) from centerX.
     DrawCenteredText("Select Workload:", 400, 20, DARKGRAY);
     
     if (!menuState->physicsEnabled) 
@@ -62,8 +56,6 @@ void UpdateAndDrawMenu(MenuState* menuState)
         else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH_WITH_PHYSICS;
     }
 
-    // --- START BUTTON ---
-    // Make the start button 360px wide. Center by subtracting 180.
     if (GuiButton((Rectangle){ centerX - 180, 520, 360, 60 }, "START SIMULATION")) 
     {
         menuState->isStartPressed = true;

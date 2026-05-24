@@ -24,7 +24,7 @@ static void aos_update_physics(SimulationState* state, float delta)
 
 static void aos_render(const SimulationState* state) 
 {
-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+    uint32_t drawCount = (state->particleCount > 50000) ? 50000 : state->particleCount;
     DrawParticlesAoS(state->data.aos, drawCount);
 }
 
@@ -48,7 +48,7 @@ static void soa_update_physics(SimulationState* state, float delta)
 
 static void soa_render(const SimulationState* state)
 {
-    uint32_t drawCount = (state->particleCount > 100000) ? 100000 : state->particleCount;
+    uint32_t drawCount = (state->particleCount > 50000) ? 50000 : state->particleCount;
     DrawParticlesSoA(&state->data.soa, drawCount);
 }
 
