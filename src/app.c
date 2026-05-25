@@ -16,7 +16,8 @@ static void UpdateMenu(AppContext* appContext, float delta)
             &appContext->simState,
             appContext->menuState.selectedMode,
             appContext->menuState.selectedParticleCount,
-            appContext->menuState.physicsEnabled
+            appContext->menuState.physicsEnabled,
+            appContext->menuState.simdEnabled
         );
         appContext->menuState.isStartPressed = false;
         SwitchToSimulationScreen(appContext);

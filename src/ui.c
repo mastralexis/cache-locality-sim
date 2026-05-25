@@ -10,8 +10,10 @@ void DrawTelemetryUI(const SimulationState* state)
     DrawRectangleLines(10, 10, 340, 170, RAYWHITE);
 
     // determine the text for the current modes
-    const char* modeText = (state->mode == MODE_AOS) ? "Architecture: AoS (OOP)" : "Architecture: SoA (DOD)";
-    const char* physicsText = state->physicsEnabled ? "Physics: O(N^2) Collisions" : "Physics: Simple Bouncing";
+    const char* modeText;
+    if (state->mode == MODE_AOS) { modeText = "Architecture: AoS"; }
+    else { modeText = state->simdEnabled ? "Architecture: SoA (SIMD)" : "Architecture: SoA (Scalar)"; }
+    const char* physicsText = state->physicsEnabled ? "Physics: Gravity & Collision" : "No physics";
 
     // calculate CPU timings in milliseconds
     double currentFrameMs = state->lastPhysicsLoopUpdate * 1000.0;

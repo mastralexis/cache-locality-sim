@@ -15,6 +15,7 @@ void InitMenuState(MenuState* state)
     state->guiPhysicsToggle = 0;
     state->guiCountToggle = 1;
     state->physicsEnabled = false;
+    state->simdEnabled = false;
 }
 
 void UpdateAndDrawMenu(MenuState* menuState)
@@ -32,6 +33,16 @@ void UpdateAndDrawMenu(MenuState* menuState)
     DrawCenteredText("Select Memory Layout:", 180, 20, DARKGRAY);
     GuiToggleGroup((Rectangle){ centerX - 140, 210, 140, 40 }, "AoS (OOP);SoA (DOD)", &menuState->guiModeToggle);
     menuState->selectedMode = (menuState->guiModeToggle == 0) ? MODE_AOS : MODE_SOA;
+
+    if (menuState->selectedMode == MODE_SOA)
+    {
+        GuiCheckBox((Rectangle){ centerX + 180, 220, 20, 20 }, " Enable SIMD", &menuState->simdEnabled);
+    }
+    else 
+    {
+        menuState->simdEnabled = false;
+    }
+    // -------------------------------------
 
     DrawCenteredText("Select Physics Complexity:", 290, 20, DARKGRAY);
     GuiToggleGroup((Rectangle){ centerX - 160, 320, 160, 40 }, "No Collisions;Gravity and Wall Checking", &menuState->guiPhysicsToggle);

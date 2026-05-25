@@ -9,11 +9,12 @@
 typedef struct {
     SimulationMode selectedMode;
     uint32_t selectedParticleCount;
-    bool isStartPressed;
     int guiModeToggle;  
     int guiPhysicsToggle;
     int guiCountToggle;
+    bool simdEnabled;
     bool physicsEnabled;
+    bool isStartPressed;
 } MenuState;
 
 /**

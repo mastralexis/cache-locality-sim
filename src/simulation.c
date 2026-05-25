@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <immintrin.h>
 
 #define ALIGN64(size) (((size) + 63) & ~63)
 
@@ -45,6 +46,10 @@ static void soa_update_physics(SimulationState* state, float delta)
 {
     UpdateParticlesSoA_Physics(&state->data.soa, state->particleCount, delta);
 }
+static void soa_update_simd(SimulationState* state, float delta) 
+{
+    UpdateParticlesSoA_SIMD(&state->data.soa, state->particleCount, delta);
+}
 
 static void soa_render(const SimulationState* state)
 {
@@ -60,8 +65,15 @@ static void soa_cleanup(SimulationState* state)
         state->data.soa.memoryBlock = NULL;
     }
 }
-
-void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount, bool physicsEnabled)
+static void soa_cleanup_simd(SimulationState* state)
+{
+    if (state->data.soa.memoryBlock != NULL) 
+    {
+        _mm_free(state->data.soa.memoryBlock);
+        state->data.soa.memoryBlock = NULL;
+    }
+}
+void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount, bool physicsEnabled, bool simdEnabled)
 {
     simState->mode = selectedMode;
     simState->particleCount = particleCount;
@@ -84,16 +96,19 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
             break;
         case MODE_SOA:
             // mass allocation with alignment
-            size_t posSize = ALIGN64(particleCount * sizeof(Vector2));
-            size_t velSize = ALIGN64(particleCount * sizeof(Vector2));
-            size_t colSize = ALIGN64(particleCount * sizeof(Color));
-            size_t masSize = ALIGN64(particleCount * sizeof(float));
-            simState->data.soa.memoryBlock = malloc(posSize + velSize + colSize + masSize);
+            size_t posXSize = ALIGN64(particleCount * sizeof(float));
+            size_t posYSize = ALIGN64(particleCount * sizeof(float));
+            size_t velXSize = ALIGN64(particleCount * sizeof(float));
+            size_t velYSize = ALIGN64(particleCount * sizeof(float));
+            size_t colSize  = ALIGN64(particleCount * sizeof(Color));
+            size_t masSize  = ALIGN64(particleCount * sizeof(float));
+            // simState->data.soa.memoryBlock = malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize);
+            simState->data.soa.memoryBlock = _mm_malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize, 64);    // for simd
             InitParticlesSoA(&simState->data.soa, particleCount);
-            if (physicsEnabled) simState->update = soa_update_physics;
+            if (physicsEnabled) simState->update = simdEnabled ? soa_update_simd : soa_update_physics;
             else                simState->update = soa_update_simple;
             simState->render   = soa_render;
-            simState->cleanup  = soa_cleanup;
+            simState->cleanup  = soa_cleanup_simd;
             break;
         default:
             break;

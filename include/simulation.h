@@ -4,6 +4,7 @@
 #include "common.h"
 #include "particle_aos.h"
 #include "particle_soa.h"
+#include <stdbool.h>
 
 typedef struct SimulationState SimulationState;
 typedef void (*PhysicsUpdateFn)(SimulationState* state, float deltaTime);
@@ -30,8 +31,9 @@ struct SimulationState
     double totalElapsedTime;        // time since simulation started
     uint32_t totalFrames;           // how many frames have passed
     double finalAverageTimeMs;      // the final metric
-    bool physicsEnabled;
     double timeAccumulator;
+    bool simdEnabled;
+    bool physicsEnabled;
 };
 
 /**
@@ -40,7 +42,7 @@ struct SimulationState
  * @param targetMode The mode chosen
  * @param initialCount The starting number of particles
  */
-void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount, bool physicsEnabled);
+void InitSimulation(SimulationState* state, SimulationMode targetMode, uint32_t initialCount, bool physicsEnabled, bool simdEnabled);
 
 /**
  * @brief Triggers the physics update for the active paradigm
