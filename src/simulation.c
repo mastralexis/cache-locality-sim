@@ -42,13 +42,20 @@ static void soa_update_simple(SimulationState* state, float delta)
 {
     UpdateParticlesSoA_Simple(&state->data.soa, state->particleCount, delta);
 }
+
 static void soa_update_physics(SimulationState* state, float delta) 
 {
     UpdateParticlesSoA_Physics(&state->data.soa, state->particleCount, delta);
 }
-static void soa_update_simd(SimulationState* state, float delta) 
+
+static void soa_update_physics_simd(SimulationState* state, float delta) 
 {
-    UpdateParticlesSoA_SIMD(&state->data.soa, state->particleCount, delta);
+    UpdateParticlesSoA_Physics_SIMD(&state->data.soa, state->particleCount, delta);
+}
+
+static void soa_update_simple_simd(SimulationState* state, float delta) 
+{
+    UpdateParticlesSoA_Simple_SIMD(&state->data.soa, state->particleCount, delta);
 }
 
 static void soa_render(const SimulationState* state)
@@ -105,8 +112,8 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
             // simState->data.soa.memoryBlock = malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize);
             simState->data.soa.memoryBlock = _mm_malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize, 64);    // for simd
             InitParticlesSoA(&simState->data.soa, particleCount);
-            if (physicsEnabled) simState->update = simdEnabled ? soa_update_simd : soa_update_physics;
-            else                simState->update = soa_update_simple;
+            if (physicsEnabled) simState->update = simdEnabled ? soa_update_physics_simd : soa_update_physics;
+            else                simState->update = simdEnabled ? soa_update_simple_simd : soa_update_simple;
             simState->render   = soa_render;
             simState->cleanup  = soa_cleanup_simd;
             break;

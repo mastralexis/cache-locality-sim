@@ -102,7 +102,7 @@ void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float de
     }
 }
 
-void UpdateParticlesSoA_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
+void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
 {
     // calculate the safe boundary for 8-lane SIMD
     uint32_t simdCount = count - (count % 8);
@@ -200,6 +200,37 @@ void UpdateParticlesSoA_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta
             soa->posY[i] = SCREEN_HEIGHT;
             soa->velY[i] = -soa->velY[i] * 0.8f;
         }
+    }
+}
+
+void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
+{
+    uint32_t simdCount = count - (count % 8);
+    __m256 dt = _mm256_set1_ps(delta);
+
+    // process 8 particles at a time
+    for (uint32_t i = 0; i < simdCount; i += 8) 
+    {
+        // load positions and velocities
+        __m256 px = _mm256_load_ps(&soa->posX[i]);
+        __m256 py = _mm256_load_ps(&soa->posY[i]);
+        __m256 vx = _mm256_load_ps(&soa->velX[i]);
+        __m256 vy = _mm256_load_ps(&soa->velY[i]);
+
+        // integrate Position: p = p + (v * dt)
+        px = _mm256_add_ps(px, _mm256_mul_ps(vx, dt));
+        py = _mm256_add_ps(py, _mm256_mul_ps(vy, dt));
+
+        // store updated positions back to memory
+        _mm256_store_ps(&soa->posX[i], px);
+        _mm256_store_ps(&soa->posY[i], py);
+    }
+
+    // tail Loop: Handle any leftover particles (will run 0 to 7 times)
+    for (uint32_t i = simdCount; i < count; i++)
+    {
+        soa->posX[i] += soa->velX[i] * delta;
+        soa->posY[i] += soa->velY[i] * delta;
     }
 }
 

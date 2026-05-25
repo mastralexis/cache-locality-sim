@@ -30,7 +30,8 @@ void InitParticlesSoA(ParticleSystemSoA* system, uint32_t count);
  */
 void UpdateParticlesSoA_Simple(ParticleSystemSoA* system, uint32_t count, float deltaTime);
 void UpdateParticlesSoA_Physics(ParticleSystemSoA* system, uint32_t count, float deltaTime);
-void UpdateParticlesSoA_SIMD(ParticleSystemSoA* system, uint32_t count, float delta);
+void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* system, uint32_t count, float delta);
+void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* system, uint32_t count, float delta);
 
 /**
  * @brief Renders all particles to the screen by reading from the necessary component arrays
