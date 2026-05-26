@@ -3,6 +3,7 @@
 
 #include <raylib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define PARTICLES_LOW 50000     // 3.2 mb
 #define PARTICLES_MED 500000    // 32 mb

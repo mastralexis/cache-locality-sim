@@ -13,6 +13,14 @@ typedef struct {
 } ParticleAoS;
 
 /**
+ * @brief Allocates and initializes an AoS array
+ * @param particlesOut Pointer to the AoS array pointer
+ * @param count Number of particles
+ * @return true if successful, false if out of memory
+ */
+bool CreateParticlesAoS(ParticleAoS** particlesOut, uint32_t count);
+
+/**
  * @brief Initializes an array of particles with random positions, velocities and colors
  * @param particles Pointer to the first element of the AoS array
  * @param count The total number of particle objects to Initialize
@@ -20,12 +28,19 @@ typedef struct {
 void InitParticlesAoS(ParticleAoS* particles, uint32_t const);
 
 /**
- * @brief Updates the physics of all particles
+ * @brief Updates particle positions linearly without physics or collisions
  * @param particles Pointer to the first element of the AoS array
  * @param count The total number of particles to update
  * @param delta The time passed since the last frame
  */
 void UpdateParticlesAoS_Simple(ParticleAoS* particles, uint32_t count, float delta);
+
+/**
+ * @brief Updates particle positions while applying gravity, drag, and screen-boundary collisions
+ * @param particles Pointer to the first element of the AoS array
+ * @param count The total number of particles to update
+ * @param delta The time passed since the last frame
+ */
 void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float delta);
 
 /**
@@ -34,5 +49,10 @@ void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float de
  * @param count The total number of particles to draw
  */
 void DrawParticlesAoS(const ParticleAoS* particles, uint32_t count);
+
+/**
+ * @brief Safely frees an AoS array and sets the pointer to NULL.
+ */
+void DestroyParticlesAoS(ParticleAoS** particles);
 
 #endif

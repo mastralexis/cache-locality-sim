@@ -4,6 +4,18 @@
 #include <stdlib.h>
 #include <math.h>
 
+bool CreateParticlesAoS(ParticleAoS** particles, uint32_t count)
+{
+    *particles = malloc(count * sizeof(ParticleAoS));
+    if (*particles == NULL) 
+    {
+        return false;
+    }
+    
+    InitParticlesAoS(*particles, count);
+    return true;
+}
+
 void InitParticlesAoS(ParticleAoS *particles, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)
@@ -72,5 +84,14 @@ void DrawParticlesAoS(const ParticleAoS* particles, uint32_t count)
     for (uint32_t i = 0; i < count; i++)
     {
         DrawPixelV(particles[i].pos, particles[i].color);
+    }
+}
+
+void DestroyParticlesAoS(ParticleAoS** particles)
+{
+    if (particles != NULL && *particles != NULL) 
+    {
+        free(*particles);
+        *particles = NULL;
     }
 }

@@ -11,6 +11,29 @@
 
 #define ALIGN64(size) (((size) + 63) & ~63)
 
+bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
+{
+    size_t posXSize = ALIGN64(count * sizeof(float));
+    size_t posYSize = ALIGN64(count * sizeof(float));
+    size_t velXSize = ALIGN64(count * sizeof(float));
+    size_t velYSize = ALIGN64(count * sizeof(float));
+    size_t colSize  = ALIGN64(count * sizeof(Color));
+    size_t masSize  = ALIGN64(count * sizeof(float));
+    
+    size_t totalSize = posXSize + posYSize + velXSize + velYSize + colSize + masSize;
+    void* ptr = NULL;
+    
+    if (posix_memalign(&ptr, 64, totalSize) != 0) 
+    {
+        return false;
+    }
+    
+    soa->memoryBlock = ptr;
+    InitParticlesSoA(soa, count); 
+    
+    return true;
+}
+
 void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
     char* currentPtr = (char*)soa->memoryBlock;
@@ -254,3 +277,11 @@ void DrawParticlesSoA(const ParticleSystemSoA* soa, uint32_t count)
         DrawPixel((int)soa->posX[i], (int)soa->posY[i], soa->color[i]);
 }
 
+void DestroyParticlesSoA(ParticleSystemSoA* soa)
+{
+    if (soa != NULL && soa->memoryBlock != NULL) 
+    {
+        free(soa->memoryBlock);
+        soa->memoryBlock = NULL;
+    }
+}

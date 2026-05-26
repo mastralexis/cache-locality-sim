@@ -38,11 +38,7 @@ static void aos_render(const SimulationState* state)
 
 static void aos_cleanup(SimulationState* state)
 {
-    if (state->data.aos != NULL) 
-    {
-        free(state->data.aos);
-        state->data.aos = NULL;
-    }
+    DestroyParticlesAoS(&state->data.aos);
 }
 
 static void soa_update_simple(SimulationState* state, float delta) 
@@ -73,20 +69,9 @@ static void soa_render(const SimulationState* state)
 
 static void soa_cleanup(SimulationState* state)
 {
-    if (state->data.soa.memoryBlock != NULL) 
-    {
-        free(state->data.soa.memoryBlock);
-        state->data.soa.memoryBlock = NULL;
-    }
+    DestroyParticlesSoA(&state->data.soa);
 }
-static void soa_cleanup_simd(SimulationState* state)
-{
-    if (state->data.soa.memoryBlock != NULL) 
-    {
-        free(state->data.soa.memoryBlock);
-        state->data.soa.memoryBlock = NULL;
-    }
-}
+
 void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint32_t particleCount, bool physicsEnabled, bool simdEnabled)
 {
     simState->mode = selectedMode;
@@ -101,39 +86,26 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
     switch (selectedMode) 
     {
         case MODE_AOS:
-            simState->data.aos = malloc(particleCount * sizeof(ParticleAoS));
-            if (simState->data.aos == NULL)
+            if (!CreateParticlesAoS(&simState->data.aos, particleCount))
             {
                 fprintf(stderr, "Failed to allocate memory for AoS particles\n");
                 exit(EXIT_FAILURE);
             }
-            InitParticlesAoS(simState->data.aos, particleCount);
             if (physicsEnabled) simState->update = aos_update_physics;
             else                simState->update = aos_update_simple;
             simState->render   = aos_render;
             simState->cleanup  = aos_cleanup;
             break;
         case MODE_SOA:
-            // mass allocation with alignment
-            size_t posXSize = ALIGN64(particleCount * sizeof(float));
-            size_t posYSize = ALIGN64(particleCount * sizeof(float));
-            size_t velXSize = ALIGN64(particleCount * sizeof(float));
-            size_t velYSize = ALIGN64(particleCount * sizeof(float));
-            size_t colSize  = ALIGN64(particleCount * sizeof(Color));
-            size_t masSize  = ALIGN64(particleCount * sizeof(float));
-            size_t totalSize = posXSize + posYSize + velXSize + velYSize + colSize + masSize;
-            void* ptr = NULL;
-            if (posix_memalign(&ptr, 64, totalSize) != 0)
+            if (!CreateParticlesSoA(&simState->data.soa, particleCount))
             {
                 fprintf(stderr, "Failed to allocate memory for SoA particles\n");
                 exit(EXIT_FAILURE);
             }
-            simState->data.soa.memoryBlock = ptr;
-            InitParticlesSoA(&simState->data.soa, particleCount);
             if (physicsEnabled) simState->update = simdEnabled ? soa_update_physics_simd : soa_update_physics;
             else                simState->update = simdEnabled ? soa_update_simple_simd : soa_update_simple;
             simState->render   = soa_render;
-            simState->cleanup  = soa_cleanup_simd;
+            simState->cleanup  = soa_cleanup;
             break;
         default:
             break;
