@@ -1,17 +1,18 @@
 # Cache Locality Simulation: Data-Oriented Design vs. OOP in C
 
 ## Overview
-This repository contains the code, data, and academic paper for my semester assignment. The project investigates the performance differences between **Data-Oriented Design** and traditional **Object-Oriented Programming** paradigms within a high-performance C environment.
+This repository contains the code, data, and academic paper for the semester assignment on Systems Programming course in Harokopio University of Athens. The project investigates the performance differences between **Data-Oriented Design** and the data layouts encouraged by traditional **Object-Oriented Programming** within a high-performance C environment.
 
 By simulating a large-scale Particle System using [Raylib](https://www.raylib.com/) library, this project visualizes and measures the impact of memory layout on CPU cache efficiency.
 
-Specifically, it compares:
-*   **AoS (Array of Structures):** The traditional OOP approach, known for frequent CPU cache misses in large datasets.
-*   **SoA (Structure of Arrays):** The DOD approach, optimized for data locality, hardware prefetching, and minimal L1/L2 cache misses.
+Specifically, it benchmarks two paradigms:
+* **AoS (Array of Structures) - The OOP Memory Layout:** Data is grouped by object (entity). While intuitive for human modeling, this approach suffers from severe CPU cache-line bloat and frequent L1/L2 cache misses when processing large datasets sequentially.
+* **SoA (Structure of Arrays) - The DOD Memory Layout:** Data is grouped by component. This approach optimizes for hardware prefetching and data locality, allowing for maximum cache utilization and the application of AVX SIMD instructions.
 
 ## Features
 *   **Live Rendering:** Visualizing large systems of particles/objects in real-time using Raylib.
 *   **Live Profiling:** On-screen telemetry displaying Frames Per Second and execution time  for the physics update loop.
+* **SIMD Optimization:** Optional AVX intrinsic fallbacks for SoA layouts.
 
 ## Repository Structure
 *   `src/`: C source code for the simulation, UI, and physics engines.
@@ -30,7 +31,7 @@ Specifically, it compares:
 ## Prerequisites
 To compile, run, and profile this project, you will need:
 *   A C compiler (GCC or Clang)
-*   CMake (3.15 or highter)
+*   CMake (3.15 or higher)
 *   [Valgrind](https://valgrind.org/) (specifically for running the cachegrind benchmarks).
 
 *(Raylib does **not** need to be pre-installed. The CMake build system will automatically fetch and compile the correct version of Raylib for your operating system).*
@@ -66,9 +67,17 @@ To compile, run, and profile this project, you will need:
     .\build\cache-locality-sim.exe      # Run
     ```
 
+## Controls / Usage
+Once the application is running, use the interactive GUI menu to select your desired memory layout, workload (particle count), and physics complexity. 
+* **`Left Mouse Click`**: Interact with GUI toggles and buttons.
+* **`ESC`**: Terminate the program.
+* **`ENTER`**: Return to the main menu from the Results screen.
 
-## Controls
-To be implemented
+## Profiling with Cachegrind
+To verify the cache locality claims, you can run the compiled binary through Valgrind's Cachegrind tool (Linux/macOS only):
+```bash
+valgrind --tool=cachegrind ./build/cache-locality-sim
+```
 
 ### Team Members
 
