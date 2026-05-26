@@ -2,12 +2,19 @@
 #include "particle_aos.h"
 #include "particle_soa.h"
 #include "raylib.h"
+#include <mm_malloc.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <immintrin.h>
+#include <stdio.h>
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+    #include <immintrin.h>
+    #define AVX_SUPPORTED 1
+#else
+    #define AVX_SUPPORTED 0
+#endif
 
 #define ALIGN64(size) (((size) + 63) & ~63)
 
@@ -76,7 +83,7 @@ static void soa_cleanup_simd(SimulationState* state)
 {
     if (state->data.soa.memoryBlock != NULL) 
     {
-        _mm_free(state->data.soa.memoryBlock);
+        free(state->data.soa.memoryBlock);
         state->data.soa.memoryBlock = NULL;
     }
 }
@@ -86,7 +93,7 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
     simState->particleCount = particleCount;
     simState->physicsEnabled = physicsEnabled;
     simState->lastPhysicsLoopUpdate = 0.0;
-    simState->accumulatedPhusicsTime = 0.0;
+    simState->accumulatedPhysicsTime = 0.0;
     simState->totalElapsedTime = 0.0;
     simState->totalFrames = 0.0;
     SetRandomSeed(42);    // so the tests can be the same every time
@@ -94,7 +101,12 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
     switch (selectedMode) 
     {
         case MODE_AOS:
-            simState->data.aos = (ParticleAoS*) malloc(particleCount * sizeof(ParticleAoS));
+            simState->data.aos = malloc(particleCount * sizeof(ParticleAoS));
+            if (simState->data.aos == NULL)
+            {
+                fprintf(stderr, "Failed to allocate memory for AoS particles\n");
+                exit(EXIT_FAILURE);
+            }
             InitParticlesAoS(simState->data.aos, particleCount);
             if (physicsEnabled) simState->update = aos_update_physics;
             else                simState->update = aos_update_simple;
@@ -109,8 +121,14 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
             size_t velYSize = ALIGN64(particleCount * sizeof(float));
             size_t colSize  = ALIGN64(particleCount * sizeof(Color));
             size_t masSize  = ALIGN64(particleCount * sizeof(float));
-            // simState->data.soa.memoryBlock = malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize);
-            simState->data.soa.memoryBlock = _mm_malloc(posXSize + posYSize + velXSize + velYSize + colSize + masSize, 64);    // for simd
+            size_t totalSize = posXSize + posYSize + velXSize + velYSize + colSize + masSize;
+            void* ptr = NULL;
+            if (posix_memalign(&ptr, 64, totalSize) != 0)
+            {
+                fprintf(stderr, "Failed to allocate memory for SoA particles\n");
+                exit(EXIT_FAILURE);
+            }
+            simState->data.soa.memoryBlock = ptr;
             InitParticlesSoA(&simState->data.soa, particleCount);
             if (physicsEnabled) simState->update = simdEnabled ? soa_update_physics_simd : soa_update_physics;
             else                simState->update = simdEnabled ? soa_update_simple_simd : soa_update_simple;
@@ -128,7 +146,7 @@ void UpdateSimulation(SimulationState* simState, float delta)
         simState->update(simState, delta);
     double endTime = GetTime();
     simState->lastPhysicsLoopUpdate = endTime - startTime;
-    simState->accumulatedPhusicsTime += simState->lastPhysicsLoopUpdate;
+    simState->accumulatedPhysicsTime += simState->lastPhysicsLoopUpdate;
     simState->totalElapsedTime += delta;
     simState->totalFrames++;
 }

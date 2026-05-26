@@ -2,7 +2,12 @@
 #include "common.h"
 #include <raylib.h>
 #include <math.h>
-#include <immintrin.h>
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+    #include <immintrin.h>
+    #define AVX_SUPPORTED 1
+#else
+    #define AVX_SUPPORTED 0
+#endif
 
 #define ALIGN64(size) (((size) + 63) & ~63)
 
@@ -104,6 +109,7 @@ void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float de
 
 void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
 {
+#if AVX_SUPPORTED
     // calculate the safe boundary for 8-lane SIMD
     uint32_t simdCount = count - (count % 8);
     // broadcast scalar values into 8-lane SIMD registers
@@ -201,10 +207,15 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
             soa->velY[i] = -soa->velY[i] * 0.8f;
         }
     }
+#else
+    // if ARM cpu is used
+    UpdateParticlesSoA_Physics(soa, count, delta);
+#endif
 }
 
 void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
 {
+#if AVX_SUPPORTED
     uint32_t simdCount = count - (count % 8);
     __m256 dt = _mm256_set1_ps(delta);
 
@@ -232,6 +243,9 @@ void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, floa
         soa->posX[i] += soa->velX[i] * delta;
         soa->posY[i] += soa->velY[i] * delta;
     }
+#else
+    UpdateParticlesSoA_Simple(soa, count, delta);
+#endif
 }
 
 void DrawParticlesSoA(const ParticleSystemSoA* soa, uint32_t count)

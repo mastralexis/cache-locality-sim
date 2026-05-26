@@ -1,4 +1,5 @@
 #include "app.h"
+#include "common.h"
 #include "menu.h"
 #include "simulation.h"
 #include "results.h"
@@ -39,10 +40,17 @@ static void UpdateSim(AppContext* appContext, float delta)
 
     // check for the 10 second timer
     // if true calculate the results 
-    if (appContext->simState.totalElapsedTime >= 10.0)
+    if (appContext->simState.totalElapsedTime >= BENCHMARK_DURATION_SECONDS)
     {
-        appContext->simState.finalAverageTimeMs = 
-            (appContext->simState.accumulatedPhusicsTime / appContext->simState.totalFrames) * 1000.0;
+        if (appContext->simState.totalFrames > 0) 
+        {
+            appContext->simState.finalAverageTimeMs = 
+                (appContext->simState.accumulatedPhysicsTime / appContext->simState.totalFrames) * 1000.0;
+        }
+        else 
+        {
+            appContext->simState.finalAverageTimeMs = 0.0;
+        }
         CleanSimulation(&appContext->simState);  // clean up the memory
         SwitchToResultsScreen(appContext);
     }

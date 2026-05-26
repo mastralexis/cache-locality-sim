@@ -27,6 +27,11 @@ int main(void)
         EndDrawing();
     }
 
+    if (app.simState.cleanup != NULL)
+    {
+        CleanSimulation(&app.simState);
+    }
+
     // cleanup
     CloseWindow();
 

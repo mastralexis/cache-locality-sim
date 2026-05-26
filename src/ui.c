@@ -19,14 +19,14 @@ void DrawTelemetryUI(const SimulationState* state)
     double currentFrameMs = state->lastPhysicsLoopUpdate * 1000.0;
     double avgTimeMs = 0.0;
     if (state->totalFrames > 0) {
-        avgTimeMs = (state->accumulatedPhusicsTime / state->totalFrames) * 1000.0;
+        avgTimeMs = (state->accumulatedPhysicsTime / state->totalFrames) * 1000.0;
     }
 
     char buffer[128];
 
     // render the Data
     // FPS
-    sprintf(buffer, "FPS: %d", GetFPS());
+    snprintf(buffer, sizeof(buffer), "FPS: %d", GetFPS());
     DrawText(buffer, 25, 20, 20, GREEN);
 
     // Mode
@@ -36,11 +36,11 @@ void DrawTelemetryUI(const SimulationState* state)
     DrawText(physicsText, 25, 80, 20, LIGHTGRAY);
 
     // Particle Count
-    sprintf(buffer, "Particles: %u", state->particleCount);
+    snprintf(buffer, sizeof(buffer), "Particles: %u", state->particleCount);
     DrawText(buffer, 25, 110, 20, WHITE);
 
     // CPU Times (Current vs Average)
-    sprintf(buffer, "CPU: %.2f ms (Avg: %.2f ms)", currentFrameMs, avgTimeMs);
+    snprintf(buffer, sizeof(buffer), "CPU: %.2f ms (Avg: %.2f ms)", currentFrameMs, avgTimeMs);
     
     // Make the text turn red if the CPU is struggling (taking longer than 16ms per frame)
     Color cpuColor = (avgTimeMs > 16.0) ? RED : YELLOW;
