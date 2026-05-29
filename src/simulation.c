@@ -32,7 +32,7 @@ static void aos_update_physics(SimulationState* state, float delta)
 
 static void aos_render(const SimulationState* state) 
 {
-    uint32_t drawCount = (state->particleCount > 50000) ? 50000 : state->particleCount;
+    uint32_t drawCount = (state->particleCount > MAX_RENDER_PARTICLES) ? MAX_RENDER_PARTICLES : state->particleCount;
     DrawParticlesAoS(state->data.aos, drawCount);
 }
 
@@ -63,7 +63,7 @@ static void soa_update_simple_simd(SimulationState* state, float delta)
 
 static void soa_render(const SimulationState* state)
 {
-    uint32_t drawCount = (state->particleCount > 50000) ? 50000 : state->particleCount;
+    uint32_t drawCount = (state->particleCount > MAX_RENDER_PARTICLES) ? MAX_RENDER_PARTICLES : state->particleCount;
     DrawParticlesSoA(&state->data.soa, drawCount);
 }
 
@@ -81,7 +81,7 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
     simState->accumulatedPhysicsTime = 0.0;
     simState->totalElapsedTime = 0.0;
     simState->totalFrames = 0.0;
-    SetRandomSeed(42);    // so the tests can be the same every time
+    SetRandomSeed(SEED);    // so the tests can be the same every time
 
     switch (selectedMode) 
     {

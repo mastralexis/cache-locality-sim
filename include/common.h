@@ -20,6 +20,13 @@
 
 #define GRAVITY_Y 98.0f
 #define DRAG 0.999f
+#define SEED 42
+#define BOUNCE_DAMPENING 0.8f
+#define MAX_RENDER_PARTICLES 50000
+#define PARTICLE_MASS_MIN 1.0f
+#define PARTICLE_MASS_MAX 10.0f
+#define VELOCITY_MIN -200
+#define VELOCITY_MAX 200
 
 typedef enum {
     MODE_MENU = 0,

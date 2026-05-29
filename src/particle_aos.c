@@ -23,9 +23,9 @@ void InitParticlesAoS(ParticleAoS *particles, uint32_t count)
         // initialize random values
         particles[i].pos.x = (float) GetRandomValue(0, SCREEN_WIDTH);
         particles[i].pos.y = (float) GetRandomValue(0, SCREEN_HEIGHT);
-        particles[i].vel.x = (float) GetRandomValue(-200, 200);
-        particles[i].vel.y = (float) GetRandomValue(-200, 200);
-        particles[i].mass  = (float) GetRandomValue(1, 10);
+        particles[i].vel.x = (float) GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
+        particles[i].vel.y = (float) GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
+        particles[i].mass  = (float) GetRandomValue(PARTICLE_MASS_MIN, PARTICLE_MASS_MAX);
         particles[i].color = (Color) {
             (unsigned char)GetRandomValue(150, 255),
             (unsigned char)GetRandomValue(50, 100),
@@ -58,23 +58,23 @@ void UpdateParticlesAoS_Physics(ParticleAoS* particles, uint32_t count, float de
         if (particles[i].pos.x <= 0.0f)
         {
             particles[i].pos.x = 0.0f;
-            particles[i].vel.x = -particles[i].vel.x * 0.8f;
+            particles[i].vel.x = -particles[i].vel.x * BOUNCE_DAMPENING;
         }
         else if (particles[i].pos.x >= SCREEN_WIDTH)
         {
             particles[i].pos.x = SCREEN_WIDTH;
-            particles[i].vel.x = -particles[i].vel.x * 0.8f;
+            particles[i].vel.x = -particles[i].vel.x * BOUNCE_DAMPENING;
         }
 
         if (particles[i].pos.y <= 0.0f) 
         {
             particles[i].pos.y = 0.0f;
-            particles[i].vel.y = -particles[i].vel.y * 0.8f;
+            particles[i].vel.y = -particles[i].vel.y * BOUNCE_DAMPENING;
         }
         else if (particles[i].pos.y >= SCREEN_HEIGHT)
         {
             particles[i].pos.y = SCREEN_HEIGHT;
-            particles[i].vel.y = -particles[i].vel.y * 0.8f;
+            particles[i].vel.y = -particles[i].vel.y * BOUNCE_DAMPENING;
         }
     }
 }

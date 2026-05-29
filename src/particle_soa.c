@@ -9,6 +9,12 @@
     #define AVX_SUPPORTED 0
 #endif
 
+#ifdef _WIN32
+    #include <malloc.h>
+#else
+    #include <stdlib.h>
+#endif
+
 #define ALIGN64(size) (((size) + 63) & ~63)
 
 bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
@@ -22,16 +28,35 @@ bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
     
     size_t totalSize = posXSize + posYSize + velXSize + velYSize + colSize + masSize;
     void* ptr = NULL;
-    
+#ifdef _WIN32
+    ptr = _aligned_malloc(totalSize, 64);
+    if (ptr == NULL) 
+    {
+        return false;
+    }
+#else
     if (posix_memalign(&ptr, 64, totalSize) != 0) 
     {
         return false;
     }
-    
+#endif
     soa->memoryBlock = ptr;
     InitParticlesSoA(soa, count); 
     
     return true;
+}
+
+void DestroyParticlesSoA(ParticleSystemSoA* soa)
+{
+    if (soa != NULL && soa->memoryBlock != NULL) 
+    {
+#ifdef _WIN32
+        _aligned_free(soa->memoryBlock);
+#else
+        free(soa->memoryBlock);
+#endif
+        soa->memoryBlock = NULL;
+    }
 }
 
 void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
@@ -60,8 +85,8 @@ void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
         soa->posX[i] = (float)GetRandomValue(0, SCREEN_WIDTH);
         soa->posY[i] = (float)GetRandomValue(0, SCREEN_HEIGHT);
         
-        soa->velX[i] = (float)GetRandomValue(-200, 200);
-        soa->velY[i] = (float)GetRandomValue(-200, 200);
+        soa->velX[i] = (float)GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
+        soa->velY[i] = (float)GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
         
         soa->color[i] = (Color){ 
             (unsigned char)GetRandomValue(50, 100),  
@@ -70,7 +95,7 @@ void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
             255                                      
         };
         
-        soa->mass[i] = (float)GetRandomValue(1, 10);
+        soa->mass[i] = (float)GetRandomValue(PARTICLE_MASS_MIN, PARTICLE_MASS_MAX);
     }
 }
 void UpdateParticlesSoA_Simple(ParticleSystemSoA* soa, uint32_t count, float delta)
@@ -109,23 +134,23 @@ void UpdateParticlesSoA_Physics(ParticleSystemSoA* soa, uint32_t count, float de
         if (posX[i] <= 0.0f)
         {
             posX[i] = 0.0f;
-            velX[i] = -velX[i] * 0.8f; 
+            velX[i] = -velX[i] * BOUNCE_DAMPENING;
         }
         else if (posX[i] >= SCREEN_WIDTH) 
         {
             posX[i] = SCREEN_WIDTH;
-            velX[i] = -velX[i] * 0.8f;
+            velX[i] = -velX[i] * BOUNCE_DAMPENING;
         }
 
         if (posY[i] <= 0.0f)
         {
             posY[i] = 0.0f;
-            velY[i] = -velY[i] * 0.8f;
+            velY[i] = -velY[i] * BOUNCE_DAMPENING;
         }
         else if (posY[i] >= SCREEN_HEIGHT)
         {
             posY[i] = SCREEN_HEIGHT;
-            velY[i] = -velY[i] * 0.8f;
+            velY[i] = -velY[i] * BOUNCE_DAMPENING;
         }
     }
 }
@@ -142,7 +167,7 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
     __m256 zero        = _mm256_setzero_ps();
     __m256 screenW     = _mm256_set1_ps((float)SCREEN_WIDTH);
     __m256 screenH     = _mm256_set1_ps((float)SCREEN_HEIGHT);
-    __m256 bounce      = _mm256_set1_ps(-0.8f);
+    __m256 bounce      = _mm256_set1_ps(-BOUNCE_DAMPENING);
 
     // process 8 particles at a time
     for (uint32_t i = 0; i < simdCount; i += 8) 
@@ -211,23 +236,23 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
         if (soa->posX[i] <= 0.0f)
         {
             soa->posX[i] = 0.0f;
-            soa->velX[i] = -soa->velX[i] * 0.8f; 
+            soa->velX[i] = -soa->velX[i] * BOUNCE_DAMPENING; 
         }
         else if (soa->posX[i] >= SCREEN_WIDTH) 
         {
             soa->posX[i] = SCREEN_WIDTH;
-            soa->velX[i] = -soa->velX[i] * 0.8f;
+            soa->velX[i] = -soa->velX[i] * BOUNCE_DAMPENING;
         }
 
         if (soa->posY[i] <= 0.0f)
         {
             soa->posY[i] = 0.0f;
-            soa->velY[i] = -soa->velY[i] * 0.8f;
+            soa->velY[i] = -soa->velY[i] * BOUNCE_DAMPENING;
         }
         else if (soa->posY[i] >= SCREEN_HEIGHT)
         {
             soa->posY[i] = SCREEN_HEIGHT;
-            soa->velY[i] = -soa->velY[i] * 0.8f;
+            soa->velY[i] = -soa->velY[i] * BOUNCE_DAMPENING;
         }
     }
 #else
@@ -275,13 +300,4 @@ void DrawParticlesSoA(const ParticleSystemSoA* soa, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)
         DrawPixel((int)soa->posX[i], (int)soa->posY[i], soa->color[i]);
-}
-
-void DestroyParticlesSoA(ParticleSystemSoA* soa)
-{
-    if (soa != NULL && soa->memoryBlock != NULL) 
-    {
-        free(soa->memoryBlock);
-        soa->memoryBlock = NULL;
-    }
 }
