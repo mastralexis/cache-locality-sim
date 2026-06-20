@@ -6,11 +6,23 @@
 
 // Represents a single particle "object"
 typedef struct {
-    Vector2 pos;
-    Vector2 vel;
-    float mass; // useless data
-    Color color;
-} ParticleAoS;
+    // Data used in the update loops
+    Vector2 pos;            // 8 bytes
+    Vector2 vel;            // 8 bytes
+
+    // Other data not used in the update loop
+    Vector2 acceleration;   // 8 bytes
+    Color startColor;       // 4 bytes
+    Color endColor;         // 4 bytes
+    float startSize;        // 4 bytes
+    float endSize;          // 4 bytes
+    float rotation;         // 4 bytes
+    float angularVelocity;  // 4 bytes
+    float lifeTime;         // 4 bytes
+    float age;              // 4 bytes
+    float mass;             // 4 bytes
+    float drag;             // 4 bytes
+} ParticleAoS;              // Total of 64 bytes 
 
 /**
  * @brief Allocates and initializes an AoS array

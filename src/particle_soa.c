@@ -19,30 +19,22 @@
 
 bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
-    size_t posXSize = ALIGN64(count * sizeof(float));
-    size_t posYSize = ALIGN64(count * sizeof(float));
-    size_t velXSize = ALIGN64(count * sizeof(float));
-    size_t velYSize = ALIGN64(count * sizeof(float));
-    size_t colSize  = ALIGN64(count * sizeof(Color));
-    size_t masSize  = ALIGN64(count * sizeof(float));
-    
-    size_t totalSize = posXSize + posYSize + velXSize + velYSize + colSize + masSize;
+    // allocate the total size of 14 float arrays and 2 color arrays
+    size_t floatArraySize = ALIGN64(count * sizeof(float));
+    size_t colorArraySize = ALIGN64(count * sizeof(Color));
+
+    size_t totalSize = (14 * floatArraySize) + (2 * colorArraySize);
+
     void* ptr = NULL;
 #ifdef _WIN32
     ptr = _aligned_malloc(totalSize, 64);
-    if (ptr == NULL) 
-    {
-        return false;
-    }
+    if (ptr == NULL) { return false; }
 #else
-    if (posix_memalign(&ptr, 64, totalSize) != 0) 
-    {
-        return false;
-    }
+    if (posix_memalign(&ptr, 64, totalSize) != 0) return false;
 #endif
     soa->memoryBlock = ptr;
     InitParticlesSoA(soa, count); 
-    
+ 
     return true;
 }
 
@@ -62,40 +54,45 @@ void DestroyParticlesSoA(ParticleSystemSoA* soa)
 void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
     char* currentPtr = (char*)soa->memoryBlock;
+    size_t floatArraySize = ALIGN64(count * sizeof(float));
+    size_t colorArraySize = ALIGN64(count * sizeof(Color));
 
-    soa->posX = (float*)currentPtr;
-    currentPtr += ALIGN64(count * sizeof(float));
+    // carve out the memory block for each pointer
+    soa->posX =            (float*)currentPtr; currentPtr += floatArraySize;
+    soa->posY =            (float*)currentPtr; currentPtr += floatArraySize;
+    soa->velX =            (float*)currentPtr; currentPtr += floatArraySize;
+    soa->velY =            (float*)currentPtr; currentPtr += floatArraySize;
+    
+    soa->accX =            (float*)currentPtr; currentPtr += floatArraySize;
+    soa->accY =            (float*)currentPtr; currentPtr += floatArraySize;
+    soa->startColor =      (Color*)currentPtr; currentPtr += colorArraySize;
+    soa->endColor   =      (Color*)currentPtr; currentPtr += colorArraySize;
+    
+    soa->startSize =       (float*)currentPtr; currentPtr += floatArraySize;
+    soa->endSize   =       (float*)currentPtr; currentPtr += floatArraySize;
+    soa->rotation  =       (float*)currentPtr; currentPtr += floatArraySize;
+    soa->angularVelocity = (float*)currentPtr; currentPtr += floatArraySize;
+    
+    soa->lifeTime =        (float*)currentPtr; currentPtr += floatArraySize;
+    soa->age      =        (float*)currentPtr; currentPtr += floatArraySize;
+    soa->mass     =        (float*)currentPtr; currentPtr += floatArraySize;
+    soa->drag     =        (float*)currentPtr;
 
-    soa->posY = (float*)currentPtr;
-    currentPtr += ALIGN64(count * sizeof(float));
 
-    soa->velX = (float*)currentPtr;
-    currentPtr += ALIGN64(count * sizeof(float));
-
-    soa->velY = (float*)currentPtr;
-    currentPtr += ALIGN64(count * sizeof(float));
-
-    soa->color = (Color*)currentPtr;
-    currentPtr += ALIGN64(count * sizeof(Color));
-
-    soa->mass = (float*)currentPtr;
-
+    // initialize the active data
     for (uint32_t i = 0; i < count; i++)
     {
         soa->posX[i] = (float)GetRandomValue(0, SCREEN_WIDTH);
         soa->posY[i] = (float)GetRandomValue(0, SCREEN_HEIGHT);
-        
         soa->velX[i] = (float)GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
         soa->velY[i] = (float)GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
-        
-        soa->color[i] = (Color){ 
-            (unsigned char)GetRandomValue(50, 100),  
-            (unsigned char)GetRandomValue(150, 255), 
-            (unsigned char)GetRandomValue(50, 100),  
-            255                                      
-        };
-        
         soa->mass[i] = (float)GetRandomValue(PARTICLE_MASS_MIN, PARTICLE_MASS_MAX);
+        soa->startColor[i] = (Color){
+            (unsigned char)GetRandomValue(50, 100),
+            (unsigned char)GetRandomValue(150, 255),
+            (unsigned char)GetRandomValue(50, 100),
+            255
+        };
     }
 }
 void UpdateParticlesSoA_Simple(ParticleSystemSoA* soa, uint32_t count, float delta)
@@ -299,5 +296,5 @@ void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, floa
 void DrawParticlesSoA(const ParticleSystemSoA* soa, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)
-        DrawPixel((int)soa->posX[i], (int)soa->posY[i], soa->color[i]);
+        DrawPixel((int)soa->posX[i], (int)soa->posY[i], soa->startColor[i]);
 }

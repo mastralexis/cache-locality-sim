@@ -26,7 +26,7 @@ void InitParticlesAoS(ParticleAoS *particles, uint32_t count)
         particles[i].vel.x = (float) GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
         particles[i].vel.y = (float) GetRandomValue(VELOCITY_MIN, VELOCITY_MAX);
         particles[i].mass  = (float) GetRandomValue(PARTICLE_MASS_MIN, PARTICLE_MASS_MAX);
-        particles[i].color = (Color) {
+        particles[i].startColor = (Color) {
             (unsigned char)GetRandomValue(150, 255),
             (unsigned char)GetRandomValue(50, 100),
             (unsigned char)GetRandomValue(50, 100),
@@ -83,7 +83,7 @@ void DrawParticlesAoS(const ParticleAoS* particles, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)
     {
-        DrawPixelV(particles[i].pos, particles[i].color);
+        DrawPixelV(particles[i].pos, particles[i].startColor);
     }
 }
 

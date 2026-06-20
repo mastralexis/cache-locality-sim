@@ -6,12 +6,26 @@
 
 // Data Oriented Approach
 typedef struct {
+    // Data used in the update loop
     float* posX;
     float* posY;
     float* velX;
     float* velY;
+
+    // Data not used in the update loop
+    float* accX;
+    float* accY;
+    Color* startColor;
+    Color* endColor;
+    float* startSize;
+    float* endSize;
+    float* rotation;
+    float* angularVelocity;
+    float* lifeTime;
+    float* age;
     float* mass;
-    Color* color;
+    float* drag;
+
     void*  memoryBlock;
 } ParticleSystemSoA;
 
