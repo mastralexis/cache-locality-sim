@@ -1,11 +1,12 @@
+#include <raylib.h>
+#include <stdbool.h>
+
 #include "app.h"
 #include "common.h"
 #include "menu.h"
 #include "simulation.h"
 #include "results.h"
 #include "ui.h"
-#include <raylib.h>
-#include <stdbool.h>
 
 //                     Menu Screen
 // -------------------------------------------------------------

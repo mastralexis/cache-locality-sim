@@ -1,8 +1,8 @@
 #ifndef PARTICLE_AOS_H
 #define PARTICLE_AOS_H
 
-#include "common.h"
 #include <raylib.h>
+#include "common.h"
 
 // Represents a single particle "object"
 typedef struct {
@@ -22,7 +22,7 @@ typedef struct {
     float age;              // 4 bytes
     float mass;             // 4 bytes
     float drag;             // 4 bytes
-} ParticleAoS;              // Total of 64 bytes 
+} ParticleAoS;              // Total of 64 bytes
 
 /**
  * @brief Allocates and initializes an AoS array
@@ -37,7 +37,7 @@ bool CreateParticlesAoS(ParticleAoS** particlesOut, uint32_t count);
  * @param particles Pointer to the first element of the AoS array
  * @param count The total number of particle objects to Initialize
  */
-void InitParticlesAoS(ParticleAoS* particles, uint32_t const);
+void InitParticlesAoS(ParticleAoS* particles, const uint32_t const);
 
 /**
  * @brief Updates particle positions linearly without physics or collisions

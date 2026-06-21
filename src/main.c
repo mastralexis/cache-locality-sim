@@ -1,11 +1,12 @@
+#include <stdint.h>
+#include <stdio.h>
+
 #include "app.h"
 #include "raylib.h"
 #include "common.h"
 #include "menu.h"
 #include "simulation.h"
 #include "ui.h"
-#include <stdint.h>
-#include <stdio.h>
 
 int main(void)
 {

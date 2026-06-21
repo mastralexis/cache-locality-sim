@@ -37,7 +37,7 @@ add_executable(${PROJECT_NAME}
     src/particle_soa.c
     src/ui.c
 )
-set_source_files_properties(src/particle_soa.c PROPERTIES COMPILE_FLAGS "-mavx -mavx2")
+set_source_files_properties(src/particle_soa.c src/simulation.c PROPERTIES COMPILE_FLAGS "-mavx -mavx2")
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 find_package(raylib QUIET)

@@ -63,4 +63,10 @@ void DrawSimulation(const SimulationState* state);
  */
 void CleanSimulation(SimulationState* state);
 
+/**
+ * @brief Checks if the CPU and compiler support AVX instructions
+ * @return true if SIMD is supported, false otherwise
+ */
+bool IsSimdSupported(void);
+
 #endif

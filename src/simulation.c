@@ -1,7 +1,3 @@
-#include "simulation.h"
-#include "particle_aos.h"
-#include "particle_soa.h"
-#include "raylib.h"
 #include <mm_malloc.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,14 +5,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-    #include <immintrin.h>
+#include <raylib.h>
+
+#include "simulation.h"
+#include "particle_aos.h"
+#include "particle_soa.h"
+
+#if defined(__AVX__)
     #define AVX_SUPPORTED 1
 #else
     #define AVX_SUPPORTED 0
 #endif
 
-#define ALIGN64(size) (((size) + 63) & ~63)
+#if defined(__x86_64__) || defined(__i386__)
+    #include <cpuid.h>
+#endif
+
+bool IsSimdSupported(void) 
+{
+    if (!AVX_SUPPORTED) return false;
+
+#if defined(__x86_64__) || defined(__i386__)
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) 
+    {
+        return (ecx & bit_AVX) != 0; 
+    }
+    return false;
+#else
+    return false;
+#endif
+}
 
 // Wrappers to pass the correct data structure to the functions
 // ------------------------------------------------------------
@@ -102,8 +121,17 @@ void InitSimulation(SimulationState* simState, SimulationMode selectedMode, uint
                 fprintf(stderr, "Failed to allocate memory for SoA particles\n");
                 exit(EXIT_FAILURE);
             }
-            if (physicsEnabled) simState->update = simdEnabled ? soa_update_physics_simd : soa_update_physics;
-            else                simState->update = simdEnabled ? soa_update_simple_simd : soa_update_simple;
+
+            bool canUseSimd = simdEnabled && IsSimdSupported();
+ 
+            if (simdEnabled && !canUseSimd)
+                printf("WARNING: SIMD requested, but CPU or Compiler does not support AVX. Falling back to scalar.\n");
+
+            simState->simdEnabled = canUseSimd;
+
+            if (physicsEnabled) simState->update = canUseSimd ? soa_update_physics_simd : soa_update_physics;
+            else                simState->update = canUseSimd ? soa_update_simple_simd : soa_update_simple;
+
             simState->render   = soa_render;
             simState->cleanup  = soa_cleanup;
             break;

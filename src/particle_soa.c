@@ -1,8 +1,13 @@
-#include "particle_soa.h"
-#include "common.h"
 #include <raylib.h>
 #include <math.h>
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+
+#include "particle_soa.h"
+#include "common.h"
+
+#define SOA_FLOAT_COMPONENTS 14
+#define SOA_COLOR_COMPONENTS 2
+
+#if defined(__AVX__)
     #include <immintrin.h>
     #define AVX_SUPPORTED 1
 #else
@@ -23,7 +28,7 @@ bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
     size_t floatArraySize = ALIGN64(count * sizeof(float));
     size_t colorArraySize = ALIGN64(count * sizeof(Color));
 
-    size_t totalSize = (14 * floatArraySize) + (2 * colorArraySize);
+    size_t totalSize = (SOA_FLOAT_COMPONENTS * floatArraySize) + (SOA_COLOR_COMPONENTS * colorArraySize);
 
     void* ptr = NULL;
 #ifdef _WIN32
@@ -218,38 +223,44 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
     }
 
     // Tail Loop: Handle any leftover particles (will run 0 to 7 times)
+
+    float* restrict posX = soa->posX;
+    float* restrict posY = soa->posY;
+    float* restrict velX = soa->velX;
+    float* restrict velY = soa->velY;
+
     for (uint32_t i = simdCount; i < count; i++)
     {
         // apply gravity and drag
-        soa->velY[i] += GRAVITY_Y * delta;
-        soa->velX[i] *= DRAG;
-        soa->velY[i] *= DRAG;
+        velY[i] += GRAVITY_Y * delta;
+        velX[i] *= DRAG;
+        velY[i] *= DRAG;
 
         // integrate position
-        soa->posX[i] += soa->velX[i] * delta;
-        soa->posY[i] += soa->velY[i] * delta;
+        posX[i] += velX[i] * delta;
+        posY[i] += velY[i] * delta;
 
         // bounce off walls
-        if (soa->posX[i] <= 0.0f)
+        if (posX[i] <= 0.0f)
         {
-            soa->posX[i] = 0.0f;
-            soa->velX[i] = -soa->velX[i] * BOUNCE_DAMPENING; 
+            posX[i] = 0.0f;
+            velX[i] = -velX[i] * BOUNCE_DAMPENING;
         }
-        else if (soa->posX[i] >= SCREEN_WIDTH) 
+        else if (posX[i] >= SCREEN_WIDTH)
         {
-            soa->posX[i] = SCREEN_WIDTH;
-            soa->velX[i] = -soa->velX[i] * BOUNCE_DAMPENING;
+            posX[i] = SCREEN_WIDTH;
+            velX[i] = -velX[i] * BOUNCE_DAMPENING;
         }
 
-        if (soa->posY[i] <= 0.0f)
+        if (posY[i] <= 0.0f)
         {
-            soa->posY[i] = 0.0f;
-            soa->velY[i] = -soa->velY[i] * BOUNCE_DAMPENING;
+            posY[i] = 0.0f;
+            velY[i] = -velY[i] * BOUNCE_DAMPENING;
         }
-        else if (soa->posY[i] >= SCREEN_HEIGHT)
+        else if (posY[i] >= SCREEN_HEIGHT)
         {
-            soa->posY[i] = SCREEN_HEIGHT;
-            soa->velY[i] = -soa->velY[i] * BOUNCE_DAMPENING;
+            posY[i] = SCREEN_HEIGHT;
+            velY[i] = -velY[i] * BOUNCE_DAMPENING;
         }
     }
 #else
@@ -282,11 +293,17 @@ void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, floa
         _mm256_store_ps(&soa->posY[i], py);
     }
 
+    float* restrict posX = soa->posX;
+    float* restrict posY = soa->posY;
+    float* restrict velX = soa->velX;
+    float* restrict velY = soa->velY;
+
+
     // tail Loop: Handle any leftover particles (will run 0 to 7 times)
     for (uint32_t i = simdCount; i < count; i++)
     {
-        soa->posX[i] += soa->velX[i] * delta;
-        soa->posY[i] += soa->velY[i] * delta;
+        posX[i] += velX[i] * delta;
+        posY[i] += velY[i] * delta;
     }
 #else
     UpdateParticlesSoA_Simple(soa, count, delta);

@@ -1,7 +1,8 @@
-#include "ui.h"
-#include "raylib.h"
-#include "common.h"
 #include <stdio.h>
+#include <raylib.h>
+
+#include "ui.h"
+#include "common.h"
 
 void DrawTelemetryUI(const SimulationState* state)
 {

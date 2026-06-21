@@ -1,6 +1,7 @@
+#include <raylib.h>
+#include <raygui.h>
+
 #include "results.h"
-#include "raylib.h"
-#include "raygui.h"
 
 void UpdateResults(AppContext* appContext, float delta)
 {

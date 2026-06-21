@@ -1,8 +1,9 @@
-#include "particle_aos.h"
-#include "common.h"
 #include <raylib.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include "particle_aos.h"
+#include "common.h"
 
 bool CreateParticlesAoS(ParticleAoS** particles, uint32_t count)
 {
