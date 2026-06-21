@@ -37,7 +37,7 @@ bool CreateParticlesAoS(ParticleAoS** particlesOut, uint32_t count);
  * @param particles Pointer to the first element of the AoS array
  * @param count The total number of particle objects to Initialize
  */
-void InitParticlesAoS(ParticleAoS* particles, const uint32_t const);
+void InitParticlesAoS(ParticleAoS* particles, uint32_t count);
 
 /**
  * @brief Updates particle positions linearly without physics or collisions
