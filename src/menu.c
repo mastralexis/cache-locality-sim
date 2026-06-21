@@ -54,15 +54,15 @@ void UpdateAndDrawMenu(MenuState* menuState)
     {
         GuiToggleGroup((Rectangle){ centerX - 150, 430, 100, 40 }, "50k;500k;2M", &menuState->guiCountToggle);
         
-        if (menuState->guiCountToggle == 0) menuState->selectedParticleCount = PARTICLES_LOW;
+        if (menuState->guiCountToggle == 0)      menuState->selectedParticleCount = PARTICLES_LOW;
         else if (menuState->guiCountToggle == 1) menuState->selectedParticleCount = PARTICLES_MED;
         else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH;
     } 
     else 
     {
-        GuiToggleGroup((Rectangle){ centerX - 150, 430, 100, 40 }, "1k;5k;15k", &menuState->guiCountToggle);
+        GuiToggleGroup((Rectangle){ centerX - 150, 430, 100, 40 }, "50k;500k;2M", &menuState->guiCountToggle);
         
-        if (menuState->guiCountToggle == 0) menuState->selectedParticleCount = PARTICLES_LOW_WITH_PHYSICS;
+        if (menuState->guiCountToggle == 0)      menuState->selectedParticleCount = PARTICLES_LOW_WITH_PHYSICS;
         else if (menuState->guiCountToggle == 1) menuState->selectedParticleCount = PARTICLES_MED_WITH_PHYSICS;
         else if (menuState->guiCountToggle == 2) menuState->selectedParticleCount = PARTICLES_HIGH_WITH_PHYSICS;
     }
