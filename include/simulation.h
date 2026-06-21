@@ -6,6 +6,8 @@
 #include "particle_soa.h"
 #include <stdbool.h>
 
+#define CPUID_FEAT_INFO_LEAF 1
+
 typedef struct SimulationState SimulationState;
 typedef void (*PhysicsUpdateFn)(SimulationState* state, float deltaTime);
 typedef void (*PhysicsDrawFn)(const SimulationState* state);

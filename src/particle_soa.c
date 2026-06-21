@@ -20,22 +20,22 @@
     #include <stdlib.h>
 #endif
 
-#define ALIGN64(size) (((size) + 63) & ~63)
+#define ALIGN_CACHE(size) (((size) + (CACHE_LINE_SIZE - 1)) & ~(CACHE_LINE_SIZE - 1))
 
 bool CreateParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
     // allocate the total size of 14 float arrays and 2 color arrays
-    size_t floatArraySize = ALIGN64(count * sizeof(float));
-    size_t colorArraySize = ALIGN64(count * sizeof(Color));
+    size_t floatArraySize = ALIGN_CACHE(count * sizeof(float));
+    size_t colorArraySize = ALIGN_CACHE(count * sizeof(Color));
 
     size_t totalSize = (SOA_FLOAT_COMPONENTS * floatArraySize) + (SOA_COLOR_COMPONENTS * colorArraySize);
 
     void* ptr = NULL;
 #ifdef _WIN32
-    ptr = _aligned_malloc(totalSize, 64);
+    ptr = _aligned_malloc(totalSize, CACHE_LINE_SIZE);
     if (ptr == NULL) { return false; }
 #else
-    if (posix_memalign(&ptr, 64, totalSize) != 0) return false;
+    if (posix_memalign(&ptr, CACHE_LINE_SIZE, totalSize) != 0) return false;
 #endif
     soa->memoryBlock = ptr;
     InitParticlesSoA(soa, count); 
@@ -59,8 +59,8 @@ void DestroyParticlesSoA(ParticleSystemSoA* soa)
 void InitParticlesSoA(ParticleSystemSoA* soa, uint32_t count)
 {
     char* currentPtr = (char*)soa->memoryBlock;
-    size_t floatArraySize = ALIGN64(count * sizeof(float));
-    size_t colorArraySize = ALIGN64(count * sizeof(Color));
+    size_t floatArraySize = ALIGN_CACHE(count * sizeof(float));
+    size_t colorArraySize = ALIGN_CACHE(count * sizeof(Color));
 
     // carve out the memory block for each pointer
     soa->posX =            (float*)currentPtr; currentPtr += floatArraySize;
@@ -161,7 +161,7 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
 {
 #if AVX_SUPPORTED
     // calculate the safe boundary for 8-lane SIMD
-    uint32_t simdCount = count - (count % 8);
+    uint32_t simdCount = count - (count % AVX_LANE_COUNT);
     // broadcast scalar values into 8-lane SIMD registers
     __m256 dt          = _mm256_set1_ps(delta);
     __m256 gravity     = _mm256_set1_ps(GRAVITY_Y * delta);
@@ -172,7 +172,7 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
     __m256 bounce      = _mm256_set1_ps(-BOUNCE_DAMPENING);
 
     // process 8 particles at a time
-    for (uint32_t i = 0; i < simdCount; i += 8) 
+    for (uint32_t i = 0; i < simdCount; i += AVX_LANE_COUNT)
     {
         // load 8 X's and 8 Y's into registers (Requires 32-byte memory alignment)
         __m256 px = _mm256_load_ps(&soa->posX[i]);
@@ -272,11 +272,11 @@ void UpdateParticlesSoA_Physics_SIMD(ParticleSystemSoA* soa, uint32_t count, flo
 void UpdateParticlesSoA_Simple_SIMD(ParticleSystemSoA* soa, uint32_t count, float delta)
 {
 #if AVX_SUPPORTED
-    uint32_t simdCount = count - (count % 8);
+    uint32_t simdCount = count - (count % AVX_LANE_COUNT);
     __m256 dt = _mm256_set1_ps(delta);
 
     // process 8 particles at a time
-    for (uint32_t i = 0; i < simdCount; i += 8) 
+    for (uint32_t i = 0; i < simdCount; i += AVX_LANE_COUNT)
     {
         // load positions and velocities
         __m256 px = _mm256_load_ps(&soa->posX[i]);

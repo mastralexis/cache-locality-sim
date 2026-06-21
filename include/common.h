@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define AVX_LANE_COUNT 8
+
 #define PARTICLES_LOW 50000     // 3.2 mb
 #define PARTICLES_MED 500000    // 32 mb
 #define PARTICLES_HIGH 2000000  // 128 mb
@@ -27,6 +29,8 @@
 #define PARTICLE_MASS_MAX 10.0f
 #define VELOCITY_MIN -200
 #define VELOCITY_MAX 200
+
+#define MS_PER_SEC 1000.0
 
 typedef enum {
     MODE_MENU = 0,

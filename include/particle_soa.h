@@ -4,6 +4,8 @@
 #include "common.h"
 #include "raylib.h"
 
+#define CACHE_LINE_SIZE 64
+
 // Data Oriented Approach
 typedef struct {
     // Data used in the update loop

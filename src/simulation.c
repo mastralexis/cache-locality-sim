@@ -21,15 +21,15 @@
     #include <cpuid.h>
 #endif
 
-bool IsSimdSupported(void) 
+bool IsSimdSupported(void)
 {
     if (!AVX_SUPPORTED) return false;
 
 #if defined(__x86_64__) || defined(__i386__)
     unsigned int eax, ebx, ecx, edx;
-    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) 
+    if (__get_cpuid(CPUID_FEAT_INFO_LEAF, &eax, &ebx, &ecx, &edx))
     {
-        return (ecx & bit_AVX) != 0; 
+        return (ecx & bit_AVX) != 0;
     }
     return false;
 #else

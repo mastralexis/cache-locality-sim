@@ -46,7 +46,7 @@ static void UpdateSim(AppContext* appContext, float delta)
         if (appContext->simState.totalFrames > 0) 
         {
             appContext->simState.finalAverageTimeMs = 
-                (appContext->simState.accumulatedPhysicsTime / appContext->simState.totalFrames) * 1000.0;
+                (appContext->simState.accumulatedPhysicsTime / appContext->simState.totalFrames) * MS_PER_SEC;
         }
         else 
         {

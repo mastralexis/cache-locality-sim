@@ -17,10 +17,10 @@ void DrawTelemetryUI(const SimulationState* state)
     const char* physicsText = state->physicsEnabled ? "Physics: Gravity & Collision" : "No physics";
 
     // calculate CPU timings in milliseconds
-    double currentFrameMs = state->lastPhysicsLoopUpdate * 1000.0;
+    double currentFrameMs = state->lastPhysicsLoopUpdate * MS_PER_SEC;
     double avgTimeMs = 0.0;
     if (state->totalFrames > 0) {
-        avgTimeMs = (state->accumulatedPhysicsTime / state->totalFrames) * 1000.0;
+        avgTimeMs = (state->accumulatedPhysicsTime / state->totalFrames) * MS_PER_SEC;
     }
 
     char buffer[128];
@@ -44,6 +44,6 @@ void DrawTelemetryUI(const SimulationState* state)
     snprintf(buffer, sizeof(buffer), "CPU: %.2f ms (Avg: %.2f ms)", currentFrameMs, avgTimeMs);
     
     // Make the text turn red if the CPU is struggling (taking longer than 16ms per frame)
-    Color cpuColor = (avgTimeMs > 16.0) ? RED : YELLOW;
+    Color cpuColor = (avgTimeMs > FRAME_TIME_WARNING_MS) ? RED : YELLOW;
     DrawText(buffer, 25, 140, 20, cpuColor);
 }
