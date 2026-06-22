@@ -17,7 +17,7 @@ Specifically, it benchmarks two paradigms:
 * **Automated Benchmarking:** Simulations automatically run for exactly 10 seconds to collect consistent profiling telemetry before transitioning to the Results screen.
 * **SIMD Optimization:** Optional AVX intrinsic fallbacks for SoA layouts.
 
-![Benchmark Results](docs/images/results.png)
+![Benchmark Results](docs/images/results.PNG)
 
 ## Repository Structure
 *   `src/`: C source code for the simulation, UI, and physics engines.
@@ -79,7 +79,7 @@ Once the application is running, use the interactive GUI menu to select your des
 * **`ESC`**: Terminate the program.
 * **`ENTER`**: Return to the main menu from the Results screen.
 
-![Simulation Configuration Menu](docs/images/menu.png)
+![Simulation Configuration Menu](docs/images/menu.PNG)
 
 ## Profiling with Cachegrind
 To verify the cache locality claims, you can run the compiled binary through Valgrind's Cachegrind tool (Linux/macOS only):
