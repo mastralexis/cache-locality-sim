@@ -5,14 +5,19 @@ This repository contains the code, data, and academic paper for the semester ass
 
 By simulating a large-scale Particle System using [Raylib](https://www.raylib.com/) library, this project visualizes and measures the impact of memory layout on CPU cache efficiency.
 
+![Simulation Running](docs/images/sim.gif)
+
 Specifically, it benchmarks two paradigms:
 * **AoS (Array of Structures) - The OOP Memory Layout:** Data is grouped by object (entity). While intuitive for human modeling, this approach suffers from severe CPU cache-line bloat and frequent L1/L2 cache misses when processing large datasets sequentially.
 * **SoA (Structure of Arrays) - The DOD Memory Layout:** Data is grouped by component. This approach optimizes for hardware prefetching and data locality, allowing for maximum cache utilization and the application of AVX SIMD instructions.
 
 ## Features
-*   **Live Rendering:** Visualizing large systems of particles/objects in real-time using Raylib.
-*   **Live Profiling:** On-screen telemetry displaying Frames Per Second and execution time  for the physics update loop.
+* **Live Rendering:** Visualizing large systems of particles/objects in real-time using Raylib.
+* **Live Profiling:** On-screen telemetry displaying Frames Per Second and execution time for the physics update loop.
+* **Automated Benchmarking:** Simulations automatically run for exactly 10 seconds to collect consistent profiling telemetry before transitioning to the Results screen.
 * **SIMD Optimization:** Optional AVX intrinsic fallbacks for SoA layouts.
+
+![Benchmark Results](docs/images/results.png)
 
 ## Repository Structure
 *   `src/`: C source code for the simulation, UI, and physics engines.
@@ -20,20 +25,20 @@ Specifically, it benchmarks two paradigms:
 *   `docs/`: Contains the LaTeX source code for the final scientific paper and the PowerPoint presentation used for the live exam.
 
 ## Tech Stack & Tools
-*   **Language:** C (C99/C11)
-*   **Graphics & Windowing:** [Raylib](https://www.raylib.com/) for real-time visualization and basic input handling.
-*   **Build System:** CMake
-*   **Profiling:** 
-    *   `Valgrind (Cachegrind)`: Used to measure L1/LL cache misses and instruction reads to scientifically prove the benefits of data locality.
-*   **Documentation:** LaTeX (for the accompanying scientific paper).
+* **Language:** C (C99/C11)
+* **Graphics & Windowing:** [Raylib](https://www.raylib.com/) for real-time visualization and basic input handling, and [Raygui](https://github.com/raysan5/raygui) for the interactive menus.
+* **Build System:** CMake
+* **Profiling:** `Valgrind (Cachegrind)`: Used to measure L1/LL cache misses and instruction reads to scientifically prove the benefits of data locality.
+* **Documentation:** LaTeX (for the accompanying scientific paper).
 
 ## Prerequisites
 To compile, run, and profile this project, you will need:
-*   A C compiler (GCC or Clang)
-*   CMake (3.15 or higher)
-*   [Valgrind](https://valgrind.org/) (specifically for running the cachegrind benchmarks).
+* A C compiler (GCC, Clang, or MSVC)
+* CMake (3.15 or higher)
+* [Valgrind](https://valgrind.org/) (specifically for running the cachegrind benchmarks, Linux/macOS only).
 
 *(Raylib does **not** need to be pre-installed. The CMake build system will automatically fetch and compile the correct version of Raylib for your operating system).*
+
 ## Building and Running
 1. Clone this repository:
     ```bash
@@ -55,6 +60,8 @@ To compile, run, and profile this project, you will need:
     ./build/cache-locality-sim          # Run
     ```
 
+    **Note for Apple Silicon (M1/M2/M3) users:** The `CMakeLists.txt` file currently hardcodes `-mavx -mavx2` flags which are specific to x86_64 processors. To build on ARM Macs, please remove or comment out the `set_source_files_properties(...)` line for `particle_soa.c` and `simulation.c` in `CMakeLists.txt` before compiling.
+
     - Windows
     ```powershell
     cmake -B build -G "MinGW Makefiles" # Configure and download dependencies (with MinGW)
@@ -71,6 +78,8 @@ Once the application is running, use the interactive GUI menu to select your des
 * **`Left Mouse Click`**: Interact with GUI toggles and buttons.
 * **`ESC`**: Terminate the program.
 * **`ENTER`**: Return to the main menu from the Results screen.
+
+![Simulation Configuration Menu](docs/images/menu.png)
 
 ## Profiling with Cachegrind
 To verify the cache locality claims, you can run the compiled binary through Valgrind's Cachegrind tool (Linux/macOS only):
