@@ -25,7 +25,6 @@ Specifically, it benchmarks two paradigms:
 *   **Build System:** CMake
 *   **Profiling:** 
     *   `Valgrind (Cachegrind)`: Used to measure L1/LL cache misses and instruction reads to scientifically prove the benefits of data locality.
-    *   `gprof`: Used for execution time profiling of the physics update loops.
 *   **Documentation:** LaTeX (for the accompanying scientific paper).
 
 ## Prerequisites
